@@ -165,7 +165,10 @@ async fn app(runtime: Runtime) -> Result<()> {
                             );
                         }
                         Err(e) => {
-                            tracing::warn!("Failed to deserialize KV hit rate event: {e}");
+                            tracing::warn!(
+                                "Failed to deserialize KV hit rate event: {:?}, {e}",
+                                msg.payload,
+                            );
                         }
                     }
                 }

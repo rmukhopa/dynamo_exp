@@ -97,8 +97,9 @@ async fn mock_event_publisher(namespace: Namespace) {
         if let Err(e) = namespace.publish(KV_HIT_RATE_SUBJECT, &event).await {
             tracing::warn!("Failed to publish KV hit rate event: {e}");
         } else {
+            let subject = format!("{}.{}", namespace.subject(), KV_HIT_RATE_SUBJECT);
             tracing::info!(
-                "Published KV hit rate event: worker_id={worker_id}, isl_blocks={isl_blocks}, overlap_blocks={overlap_blocks}, hit_rate={:.2}%",
+                "Published KV hit rate event: subject={subject}, worker_id={worker_id}, isl_blocks={isl_blocks}, overlap_blocks={overlap_blocks}, hit_rate={:.2}%",
                 (overlap_blocks as f64 / isl_blocks as f64) * 100.0
             );
         }
