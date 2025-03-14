@@ -95,13 +95,14 @@ ENV VLLM_KV_CAPI_PATH="/opt/dynamo/bindings/lib/libdynamo_llm_capi.so"
 ENV PYTHONUNBUFFERED=1
 
 # Install NATS - pointing toward NATS github instead of binaries.nats.dev due to server instability
-RUN wget https://github.com/nats-io/nats-server/releases/download/v2.10.24/nats-server-v2.10.24-amd64.deb && dpkg -i nats-server-v2.10.24-amd64.deb
+RUN wget https://github.com/nats-io/nats-server/releases/download/v2.10.24/nats-server-v2.10.24-amd64.deb && dpkg -i nats-server-v2.10.24-amd64.deb && rm nats-server-v2.10.24-amd64.deb
 
 # etcd
 ENV ETCD_VERSION="v3.5.18"
 RUN wget https://github.com/etcd-io/etcd/releases/download/$ETCD_VERSION/etcd-$ETCD_VERSION-linux-amd64.tar.gz -O /tmp/etcd.tar.gz && \
-mkdir -p /usr/local/bin/etcd && \
-tar -xvf /tmp/etcd.tar.gz -C /usr/local/bin/etcd --strip-components=1
+    mkdir -p /usr/local/bin/etcd && \
+    tar -xvf /tmp/etcd.tar.gz -C /usr/local/bin/etcd --strip-components=1 && \
+    rm /tmp/etcd.tar.gz
 ENV PATH=/usr/local/bin/etcd/:$PATH
 
 # Enable Git operations in the /workspace directory.
@@ -125,30 +126,21 @@ WORKDIR /workspace
 COPY pyproject.toml /workspace/
 COPY README.md /workspace/
 COPY LICENSE /workspace/
+COPY Cargo.toml /workspace/
+COPY Cargo.lock /workspace/
+COPY rust-toolchain.toml /workspace/
 
-# Build Rust runtime
-COPY lib/runtime /workspace/lib/runtime
-RUN cd lib/runtime && \
-    cargo build --release --locked && cargo doc --no-deps
+ARG CARGO_BUILD_JOBS
 
-# Build OpenAI HTTP Service binaries
-COPY lib/llm /workspace/lib/llm
+ENV CARGO_TARGET_DIR=/workspace/target
+# Build Rust
+COPY lib/ /workspace/lib/
 COPY components /workspace/components
-RUN cd components && \
-    cargo build --release && \
-    cp target/release/http /usr/local/bin/
-
-# Build Dynamo Run binaries
 COPY launch /workspace/launch
-RUN cd launch && \
-    cargo build --release --features mistralrs,sglang,vllm,python && \
+
+RUN cargo build --release --locked --features mistralrs,sglang,vllm,python && cargo doc --no-deps && \
     cp target/release/dynamo-run /usr/local/bin/ && \
     cp target/release/llmctl /usr/local/bin/
-
-# Generate C bindings. Note that this is required for TRTLLM backend re-build
-COPY lib/bindings /workspace/lib/bindings
-RUN cd lib/bindings/c/ && \
-    cargo build --release --locked && cargo doc --no-deps
 
 COPY deploy/dynamo/sdk /workspace/deploy/dynamo/sdk
 
@@ -167,7 +159,7 @@ RUN mkdir /opt/dynamo && \
 RUN mkdir -p /opt/dynamo/bindings/wheels && \
     mkdir /opt/dynamo/bindings/lib && \
     cp dist/ai_dynamo*cp312*.whl /opt/dynamo/bindings/wheels/. && \
-    cp lib/bindings/c/target/release/libdynamo_llm_capi.so /opt/dynamo/bindings/lib/. && \
+    cp target/release/libdynamo_llm_capi.so /opt/dynamo/bindings/lib/. && \
     cp -r lib/bindings/c/include /opt/dynamo/bindings/.
 
 # Install dynamo.runtime and dynamo.llm wheels globally in container for tests that
