@@ -142,17 +142,18 @@ html_theme = "nvidia_sphinx_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_js_files = ["custom.js"]
 # html_css_files = ["custom.css"] # Not needed with new theme
 
 html_theme_options = {
     "collapse_navigation": False,
     "github_url": "https://github.com/ai-dynamo/dynamo",
-    "switcher": {
+    #"switcher": {
         # use for local testing
         # "json_url": "http://localhost:8000/_static/switcher.json",
-        "json_url": "https://docs.nvidia.com/deeplearning/dynamo/user-guide/docs/_static/switcher.json",
-        "version_match": one_before if "dev" in version_long else version_short,
-    },
+        #"json_url": "https://docs.nvidia.com/deeplearning/dynamo/user-guide/docs/_static/switcher.json",
+        #"version_match": one_before if "dev" in version_long else version_short,
+    #},
     "navbar_start": ["navbar-logo", "version-switcher"],
     "primary_sidebar_end": [],
 }
@@ -269,34 +270,3 @@ for i, d in enumerate(json_data):
 # Write switcher data to file
 with open(switcher_path, "w") as f:
     json.dump(json_data, f, ensure_ascii=False, indent=4)
-
-
-def setup(app):
-    app.add_config_value("ultimate_replacements", {}, True)
-    app.connect("source-read", ultimateReplace)
-    app.add_js_file("https://js.hcaptcha.com/1/api.js")
-
-    visitor_script = (
-        "//assets.adobedtm.com/5d4962a43b79/c1061d2c5e7b/launch-191c2462b890.min.js"
-    )
-
-    if visitor_script:
-        app.add_js_file(visitor_script)
-
-    # if not os.environ.get("READTHEDOCS") and not os.environ.get("GITHUB_ACTIONS"):
-    #     app.add_css_file(
-    #         "https://assets.readthedocs.org/static/css/readthedocs-doc-embed.css"
-    #     )
-    #     app.add_css_file("https://assets.readthedocs.org/static/css/badge_only.css")
-
-    #     # Create the dummy data file so we can link it
-    #     # ref: https://github.com/readthedocs/readthedocs.org/blob/bc3e147770e5740314a8e8c33fec5d111c850498/readthedocs/core/static-src/core/js/doc-embed/footer.js  # noqa: E501
-    #     app.add_js_file("rtd-data.js")
-    #     app.add_js_file(
-    #         "https://assets.readthedocs.org/static/javascript/readthedocs-doc-embed.js",
-    #         priority=501,
-    #     )
-
-
-# cleanup
-# os.chdir(current_dir)

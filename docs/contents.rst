@@ -46,6 +46,6 @@
    :hidden:
    :caption: Examples
 
-   LLM Deployment <examples/llm_deployment.md>
-   Multinode <examples/multinode.md>
+   LLM Deployment <Examples/llm_deployment.md>
+   Multinode <Examples/multinode.md>
 
