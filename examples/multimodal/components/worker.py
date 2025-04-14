@@ -17,17 +17,15 @@
 import asyncio
 import logging
 import os
-import torch
-from typing import Optional, Tuple
-from functools import lru_cache
+import signal
 
 from components.disagg_router import PyDisaggregatedRouter
 from components.prefill_worker import PrefillWorker
+from components.encode_worker import EncodeWorker
 from utils.nixl import NixlMetadataStore
 from utils.prefill_queue import PrefillQueue
 from utils.protocol import MyRequestOutput, vLLMGenerateRequest
 from utils.vllm import parse_vllm_args
-from utils.llava_model import LlavaConfig, LlavaForCausalLM
 from vllm.entrypoints.openai.api_server import (
     build_async_engine_client_from_engine_args,
 )
@@ -50,12 +48,16 @@ logger = logging.getLogger(__name__)
 )
 class VllmWorker:
     prefill_worker = depends(PrefillWorker)
+    # encode_worker = depends(EncodeWorker)
 
     def __init__(self):
         self.client = None
         self.disaggregated_router: PyDisaggregatedRouter = None  # type: ignore
         class_name = self.__class__.__name__
         self.engine_args = parse_vllm_args(class_name, "")
+        # Set "trust_remote_code" to True to allow loading models with custom tokens
+        # TODO: Add documentation for this
+        # self.engine_args.trust_remote_code = True
         self.do_remote_prefill = self.engine_args.remote_prefill
         self.model_name = (
             self.engine_args.served_model_name
@@ -96,6 +98,9 @@ class VllmWorker:
             os.environ["VLLM_KV_COMPONENT"] = class_name
             logger.info(f"Generate endpoint ID: {VLLM_WORKER_ID}")
         self.metrics_publisher = KvMetricsPublisher()
+
+        signal.signal(signal.SIGTERM, self.shutdown_vllm_engine)
+        signal.signal(signal.SIGINT, self.shutdown_vllm_engine)
 
     @async_on_start
     async def async_init(self):
@@ -139,9 +144,22 @@ class VllmWorker:
                 max_local_prefill_length=self.engine_args.max_local_prefill_length,
                 max_prefill_queue_size=self.engine_args.max_prefill_queue_size,
             )
+            await self.disaggregated_router.async_init()
         else:
             self.disaggregated_router = None
         logger.info("VllmWorker has been initialized")
+
+    def shutdown_vllm_engine(self, signum, frame):
+        """Shutdown the background loop"""
+        logger.info(f"Received signal {signum}, shutting down")
+        loop = asyncio.get_event_loop()
+        try:
+            self.engine_client.close()
+            logger.info("VllmWorker shutdown complete")
+        except Exception as e:
+            logger.error(f"Error during shutdown: {e}")
+        finally:
+            loop.stop()
 
     async def create_metrics_publisher_endpoint(self):
         component = dynamo_context["component"]
@@ -161,7 +179,6 @@ class VllmWorker:
     @dynamo_endpoint()
     async def generate(self, request: vLLMGenerateRequest):
         # TODO: consider prefix hit when deciding prefill locally or remotely
-        logger.info("=== generate endpoint called")
 
         if self.disaggregated_router is not None:
             async with PrefillQueue.get_instance(
@@ -169,7 +186,7 @@ class VllmWorker:
                 stream_name=self._prefill_queue_stream_name,
             ) as prefill_queue:
                 prefill_queue_size = await prefill_queue.get_queue_size()
-            disagg_router_decision = self.disaggregated_router.prefill_remote(
+            disagg_router_decision = await self.disaggregated_router.prefill_remote(
                 len(request.engine_prompt["prompt_token_ids"]),
                 request.prefix_hit_rate,
                 prefill_queue_size,
@@ -209,51 +226,3 @@ class VllmWorker:
                 outputs=response.outputs,
                 finished=response.finished,
             ).model_dump_json()
-    
-    # @dynamo_endpoint()
-    # async def download_lora(self) -> str:
-    #     # downloaded_lora_path = self.peft_provider.download_entire_model(lora_name, checkpoint_name, lora_name)
-    #     # print("LoRA downloaded to temp directory %s", downloaded_lora_path)
-    #     # download the model to a subdirectory in the current directory
-    #     downloaded_lora_path = "/checkpoints/llava-v1.5-7b-task-lora"
-    #     # return downloaded_lora_path
-    #     yield downloaded_lora_path
-
-    # @lru_cache(maxsize=5)
-    # def load_multi_modal_projector(self, lora_name: str, lora_path: str) -> LlavaForCausalLM:
-    #     print("load_multi_modal_projector...")
-    #     device_map = "cuda:1"
-    #     kwargs = {'device_map': device_map, 'torch_dtype': torch.float16}
-            
-    #     lora_cfg_pretrained = LlavaConfig.from_pretrained(lora_path, low_cpu_mem_usage=True)
-    #     print("LlavaConfig loaded...")
-    #     model = LlavaForCausalLM.from_pretrained(MODEL_ID, low_cpu_mem_usage=True, config=lora_cfg_pretrained, **kwargs)
-    #     print("LlavaForCausalLM loaded...")
-
-    #     if os.path.exists(os.path.join(lora_path, 'non_lora_trainables.bin')):
-    #         print("non_lora_trainables.bin exists...")
-    #         non_lora_trainables = torch.load(os.path.join(lora_path, 'non_lora_trainables.bin'), map_location='cpu')
-    #         non_lora_trainables = {(k[11:] if k.startswith('base_model.') else k): v for k, v in non_lora_trainables.items()}
-    #         if any(k.startswith('model.model.') for k in non_lora_trainables):
-    #             non_lora_trainables = {(k[6:] if k.startswith('model.') else k): v for k, v in non_lora_trainables.items()}
-    #         model.load_state_dict(non_lora_trainables, strict=False)
-    #     else:
-    #         print("non_lora_trainables.bin does not exist...")
-
-    #     from peft import PeftModel
-    #     model = PeftModel.from_pretrained(model, lora_path, low_cpu_mem_usage=True)
-    #     model = model.merge_and_unload(progressbar=True)
-    #     model.requires_grad_(False)
-    #     print("Multi modal projector model loaded for ", lora_name)
-    #     return model
-
-    # @dynamo_endpoint()
-    # async def multi_modal_project(self,
-    #                         image: torch.Tensor,
-    #                         lora_name: str,
-    #                         checkpoint_name: Optional[str]) -> Tuple[torch.Tensor, str]:
-    #     mm_projector = self.load_multi_modal_projector(lora_name, checkpoint_name)
-    #     image_features = mm_projector.mm_project(image.to(device="cuda:1")).to(self.device)
-    #     # return image_features, ""
-    #     yield image_features
-

@@ -31,6 +31,8 @@ from vllm.entrypoints.openai.protocol import ChatCompletionRequest, CompletionRe
 from vllm.outputs import RequestOutput
 from vllm.transformers_utils.tokenizer import AnyTokenizer
 
+import torch
+from dynamo.runtime import EtcdKvCache
 from dynamo.sdk import async_on_start, depends, dynamo_context, dynamo_endpoint, service
 
 logger = logging.getLogger(__name__)
@@ -56,18 +58,19 @@ class Processor(ProcessMixIn):
 
     worker = depends(VllmWorker)
     router = depends(Router)
-    encode_worker = depends(EncodeWorker)
+    # encode_worker = depends(EncodeWorker)
 
     def __init__(self):
         class_name = self.__class__.__name__
         self.engine_args = parse_vllm_args(class_name, "")
+        # Set "trust_remote_code" to True to allow loading models with custom tokens
+        # self.engine_args.trust_remote_code = True
         self.model_config = self.engine_args.create_model_config()
         self.tokenizer = self._create_tokenizer(self.engine_args)
         self.chat_processor = ChatProcessor(self.tokenizer, self.model_config)
         self.completions_processor = CompletionsProcessor(
             self.tokenizer, self.model_config
         )
-        self.router_mode = self.engine_args.router
         self.min_workers = 1
 
     def _create_tokenizer(self, engine_args: AsyncEngineArgs) -> AnyTokenizer:
@@ -88,22 +91,29 @@ class Processor(ProcessMixIn):
     async def async_init(self):
         runtime = dynamo_context["runtime"]
         comp_ns, comp_name = VllmWorker.dynamo_address()  # type: ignore
-        self.vllm_worker_client = (
+        self.worker_client = (
             await runtime.namespace(comp_ns)
             .component(comp_name)
             .endpoint("generate")
             .client()
         )
-        enc_comp_ns, enc_comp_name = EncodeWorker.dynamo_address()  # type: ignore
-        self.encode_worker_client = (
-            await runtime.namespace(enc_comp_ns)
-            .component(enc_comp_name)
-            .endpoint("generate")
-            .client()
-        )
 
-        await check_required_workers(self.vllm_worker_client, self.min_workers)
-        await check_required_workers(self.encode_worker_client, self.min_workers)
+        # enc_comp_ns, enc_comp_name = EncodeWorker.dynamo_address()  # type: ignore
+        # self.encode_worker_client = (
+        #     await runtime.namespace(enc_comp_ns)
+        #     .component(enc_comp_name)
+        #     .endpoint("encode")
+        #     .client()
+        # )
+
+        await check_required_workers(self.worker_client, self.min_workers)
+        # await check_required_workers(self.encode_worker_client, self.min_workers)
+
+        self.etcd_kv_cache = await EtcdKvCache.create(
+            runtime.etcd_client(),
+            "/dynamo/processor/",
+            {"router": self.engine_args.router},
+        )
 
     async def _generate(
         self,
@@ -120,27 +130,27 @@ class Processor(ProcessMixIn):
             sampling_params,
         ) = await self._parse_raw_request(raw_request)
 
-        # Get embedding for image
-        # image_url = raw_request.image_url
-        # Use a dummy image url for now
-        image_url = "http://images.cocodataset.org/test2017/000000155781.jpg"
-        encode_generator = await self.encode_worker_client.round_robin(
-            EncodeRequest(
-                request_id=request_id,
-                image_url=image_url,
-            ).model_dump_json()
-        )
-        print("after encode_generator")
-        async for encode_response in encode_generator:
-            encode_output = EncodeResponse.model_validate_json(encode_response.data())
-            print("after encode_output")
-            image_features = encode_output.image_features
-            print("after image_features")
-            # print(f"Image features: {image_features}")
-            engine_prompt["multi_modal_data"] = {"image": image_features}
-            print("after engine_prompt")
+        # Hardcoded image url for now
+        # image_url = "http://images.cocodataset.org/test2017/000000155781.jpg"
+        # encode_generator = await self.encode_worker_client.round_robin(
+        #     EncodeRequest(
+        #         request_id=request.request_id,
+        #         image_url=image_url,
+        #     ).model_dump_json()
+        # )
+        # print("after encode_generator")
+        # async for encode_response in encode_generator:
+        #     # print(f"Encode response: {encode_response}")
+        #     encode_output = EncodeResponse.model_validate_json(encode_response.data())
+        #     # print("after encode_output")
+        #     # image_features = encode_output.image_features
+        #     image_features = torch.tensor(encode_output.image_features, device="cpu", dtype=torch.float16)
+        #     # print("after image_features")
+        #     print(f"Image features: {image_features}")
+        #     engine_prompt["multi_modal_data"] = {"image": image_features}
 
-        if self.router_mode == "kv":
+        router_mode = (await self.etcd_kv_cache.get("router")).decode()
+        if router_mode == "kv":
             async for route_response in self.router.generate(
                 Tokens(tokens=engine_prompt["prompt_token_ids"]).model_dump_json()
             ):
@@ -152,7 +162,7 @@ class Processor(ProcessMixIn):
                 break
 
             if worker_id == "":
-                engine_generator = await self.vllm_worker_client.generate(
+                engine_generator = await self.worker_client.generate(
                     vLLMGenerateRequest(
                         engine_prompt=engine_prompt,
                         sampling_params=sampling_params,
@@ -161,7 +171,7 @@ class Processor(ProcessMixIn):
                     ).model_dump_json()
                 )
             else:
-                engine_generator = await self.vllm_worker_client.direct(
+                engine_generator = await self.worker_client.direct(
                     vLLMGenerateRequest(
                         engine_prompt=engine_prompt,
                         sampling_params=sampling_params,
@@ -170,16 +180,16 @@ class Processor(ProcessMixIn):
                     ).model_dump_json(),
                     int(worker_id),
                 )
-        elif self.router_mode == "random":
-            engine_generator = await self.vllm_worker_client.generate(
+        elif router_mode == "random":
+            engine_generator = await self.worker_client.generate(
                 vLLMGenerateRequest(
                     engine_prompt=engine_prompt,
                     sampling_params=sampling_params,
                     request_id=request_id,
                 ).model_dump_json()
             )
-        elif self.router_mode == "round-robin":
-            engine_generator = await self.vllm_worker_client.round_robin(
+        elif router_mode == "round-robin":
+            engine_generator = await self.worker_client.round_robin(
                 vLLMGenerateRequest(
                     engine_prompt=engine_prompt,
                     sampling_params=sampling_params,

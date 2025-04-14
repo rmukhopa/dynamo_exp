@@ -12,46 +12,55 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-Common:
-  # model: microsoft/Phi-3.5-vision-instruct
-  model: llava-hf/llava-1.5-7b-hf
-  block-size: 64
-  max-model-len: 4096
-  kv-transfer-config: '{"kv_connector":"DynamoNixlConnector"}'
+
+# This configuration file is used in the multinode-examples.md file
+# to start the 405B model on 3 nodes.
 
 Frontend:
-  # served_model_name: microsoft/Phi-3.5-vision-instruct
-  served_model_name: llava-hf/llava-1.5-7b-hf
+  served_model_name: nvidia/Llama-3.1-405B-Instruct-FP8
   endpoint: dynamo.Processor.chat/completions
   port: 8000
 
 Processor:
-  router: round-robin
-  common-configs: [model, block-size]
+  model: nvidia/Llama-3.1-405B-Instruct-FP8
+  block-size: 64
+  max-model-len: 8192
+  router: kv
+
+Router:
+  model-name: nvidia/Llama-3.1-405B-Instruct-FP8
+  min-workers: 1
 
 VllmWorker:
+  model: nvidia/Llama-3.1-405B-Instruct-FP8
+  kv-transfer-config: '{"kv_connector":"DynamoNixlConnector"}'
+  block-size: 64
+  max-model-len: 8192
+  max-num-seqs: 16
   remote-prefill: true
   conditional-disagg: true
   max-local-prefill-length: 10
   max-prefill-queue-size: 2
+  gpu-memory-utilization: 0.95
+  tensor-parallel-size: 8
+  router: kv
+  quantization: modelopt
+  enable-prefix-caching: true
   ServiceArgs:
     workers: 1
     resources:
-      gpu: 1
-  common-configs: [model, block-size, max-model-len, kv-transfer-config]
+      gpu: 8
 
 PrefillWorker:
-  max-num-batched-tokens: 16384
+  model: nvidia/Llama-3.1-405B-Instruct-FP8
+  kv-transfer-config: '{"kv_connector":"DynamoNixlConnector"}'
+  block-size: 64
+  max-model-len: 8192
+  max-num-seqs: 16
+  gpu-memory-utilization: 0.95
+  tensor-parallel-size: 8
+  quantization: modelopt
   ServiceArgs:
     workers: 1
     resources:
-      gpu: 1
-  common-configs: [model, block-size, max-model-len, kv-transfer-config]
-
-EncodeWorker:
-  tensor-parallel-size: 1
-  router: random
-  ServiceArgs:
-    workers: 1
-    resources:
-      gpu: 1
+      gpu: 8

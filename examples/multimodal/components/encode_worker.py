@@ -14,20 +14,21 @@
 # limitations under the License.
 
 import logging
-import os
+from typing import AsyncIterator, Dict
 from functools import lru_cache
-from io import BytesIO
-from typing import AsyncIterator, Optional, Tuple
 
+from io import BytesIO
+from PIL import Image
+from transformers import AutoImageProcessor
 import requests
 import torch
-from components.worker import VllmWorker
-from PIL import Image
-from transformers import CLIPImageProcessor, CLIPVisionModel
-from utils.llava_model import LlavaConfig, LlavaForCausalLM
+# from components.worker import VllmWorker
 from utils.protocol import EncodeRequest, EncodeResponse
-
+# from vllm.utils import get_distributed_init_method, get_ip, get_open_port
+# from vllm.worker.worker import Worker
+# from vllm import AsyncEngineArgs
 from dynamo.sdk import depends, dynamo_endpoint, service
+from transformers import LlavaProcessor, LlavaForConditionalGeneration
 
 logger = logging.getLogger(__name__)
 
@@ -41,139 +42,129 @@ logger = logging.getLogger(__name__)
     workers=1,
 )
 class EncodeWorker:
-    worker = depends(VllmWorker)
+    # worker = depends(VllmWorker)
 
     def __init__(self) -> None:
-        self.VISION_MODEL_ID = "openai/clip-vit-large-patch14-336"
+        # self.MODEL_ID = "microsoft/Phi-3.5-vision-instruct"
         self.MODEL_ID = "llava-hf/llava-1.5-7b-hf"
-        self.device = "cpu"
-        self.model = CLIPVisionModel.from_pretrained(
-            self.VISION_MODEL_ID, device_map=None
+        # self.MAX_TOKENS = 10000
+        # self.image_processor = AutoImageProcessor.from_pretrained(self.MODEL_ID, trust_remote_code=True)
+        # print("Image processor loaded.")
+        # self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        # self.mm_projector_device = "cuda:1" if torch.cuda.is_available() else "cpu"
+        # torch.cuda.set_device(self.device)
+        # torch.cuda.empty_cache()
+        # self.engine_args = AsyncEngineArgs(model=self.MODEL_ID, trust_remote_code=True,
+        #                                    max_num_seqs=15, max_model_len=self.MAX_TOKENS,
+        #                                    device=self.device, limit_mm_per_prompt={"image": 10})
+        self.processor = LlavaProcessor.from_pretrained(
+            self.MODEL_ID,
+            use_fast=True  # Suppresses the slow processor warning
         )
-        self.model.requires_grad_(False)
+        self.vision_model = LlavaForConditionalGeneration.from_pretrained(
+            self.MODEL_ID,
+            device_map="auto",  # Automatically uses GPU if available
+            torch_dtype=torch.float16
+        ).eval()
 
-        self.select_layer = -2  # hardcoded based on the llava lora
-        self.processor = CLIPImageProcessor.from_pretrained(self.VISION_MODEL_ID)
-        logger.info("Embedding model loaded.")
 
-    def _feature_select(self, image_forward_outs):
-        print("Entering _feature_select:")
-        print(
-            f"Available hidden states: {len(image_forward_outs.hidden_states)} layers"
-        )
-        image_features = image_forward_outs.hidden_states[self.select_layer]
-        print(
-            f"Selected layer: {self.select_layer}, image features shape: {image_features.shape}"
-        )
-        image_features = image_features[:, 1:]
-        print(f"Removed first token, new shape: {image_features.shape}")
-        return image_features
 
     @dynamo_endpoint()
-    async def generate(self, request: EncodeRequest) -> AsyncIterator[EncodeResponse]:
-        image_features = None
-        lora_path = self.download_lora()
-        lora_name = "llava-v1.5-7b-task-lora"
-        image_features = self.embed(request.request_id, request.image_url)
-        print(image_features)
-        print("Finished embedding step.")
-        image_features = self.multi_modal_project(image_features, lora_name, lora_path)
-        print(image_features)
-        yield EncodeResponse(image_features=image_features.tolist()).model_dump_json()
+    async def encode(self, request: EncodeRequest) -> AsyncIterator[EncodeResponse]:
+        image_embeds = self.encode_image(request.image_url)
+        print("type of image_embeds: ", type(image_embeds))
+        # image_embeds=self.generate(request.prompt_token_ids, image_embeds=image_embeds)
+        # print(image_embeds)
+        yield EncodeResponse(image_features=image_embeds.tolist()).model_dump_json()
+    
 
-    def embed(self, request_id: str, image_url: str) -> AsyncIterator[EncodeResponse]:
-        logger.info(f"Embedding image from: {image_url}, request_id: {request_id}")
-        # Check if the input image is a URL or a file path
-        if image_url.startswith("http"):
-            logger.info(f"Downloading image from: {image_url}")
-            response = requests.get(image_url)
-            logger.info(f"Downloaded image, response status: {response.status_code}")
-            image_data = Image.open(BytesIO(response.content)).convert("RGB")
+    # @lru_cache(maxsize=5)
+    # def load_multi_modal_projector(self):
+    #     self.engine_args.device = self.mm_projector_device
+    #     engine_config = self.engine_args.create_engine_config()
+    #     distributed_init_method = get_distributed_init_method(
+    #         get_ip(), get_open_port())
+    #     worker = Worker(
+    #         model_config=engine_config.model_config,
+    #         parallel_config=engine_config.parallel_config,
+    #         scheduler_config=engine_config.scheduler_config,
+    #         device_config=engine_config.device_config,
+    #         cache_config=engine_config.cache_config,
+    #         load_config=engine_config.load_config,
+    #         local_rank=0,
+    #         rank=0,
+    #         distributed_init_method=distributed_init_method,
+    #         is_driver_worker=True,
+    #     )
+    #     # Initialize the worker.
+    #     worker.init_device()
+    #     worker.load_model()
+        
+    #     print("Multimodal projector loaded.")
+    #     return worker.model_runner.model.vision_embed_tokens
+
+    # def multi_modal_project(self, image_embeds: Dict[str, torch.Tensor]) -> torch.Tensor:
+    #     mm_projector = self.load_multi_modal_projector()
+        
+    #     pixel_values = image_embeds['pixel_values'].to(self.mm_projector_device)
+    #     image_sizes = image_embeds['image_sizes'].to(self.mm_projector_device)
+    #     with torch.no_grad():
+    #         image_features_proj = mm_projector(pixel_values, image_sizes)[0]
+    #     print("image_features_proj", image_features_proj)
+    #     print(image_features_proj.shape)
+    #     # tensors don't play nice when going from GPU to GPU; they can only be preserved by moving to CPU in the midst
+    #     # https://discuss.pytorch.org/t/tensor-totally-changes-when-allocating-moving-from-gpu-to-gpu/73930/15
+    #     return image_features_proj.to('cpu').to(self.device)
+
+
+    
+    # def generate(self, prompt: str,
+    #                    image_embeds: Union[Dict[str, torch.Tensor], List[Dict[str, torch.Tensor]]]) -> List[torch.Tensor]:
+
+    #     if isinstance(image_embeds, list):
+    #         print("image_embeds is a list")
+    #         image_input = [self.multi_modal_project(encoded_img) for encoded_img in image_embeds]
+    #     else:
+    #         print("image_embeds is not a list")
+    #         image_input = [self.multi_modal_project(image_embeds)]
+    #     print("image_input", image_input)
+
+    #     return image_input
+
+
+    def open_image(self, image: str) -> Image.Image:
+        if image.startswith('http') or image.startswith('https'):
+            print("Image is a URL, downloading...")
+            response = requests.get(image)
+            print(f"Downloaded image, response status: {response.status_code}")
+            image_data = Image.open(BytesIO(response.content)).convert('RGB')
         else:
-            logger.info(f"Loading image from file path: {image_url}")
-            image_data = Image.open(image_url).convert("RGB")
+            print(f"Loading image from file path: {image}")
+            image_data = Image.open(image).convert('RGB')
+        return image_data
 
-        print("Processing image data...")
-        inputs = self.processor(image_data, return_tensors="pt")["pixel_values"]
-        print(f"Processed image, input tensor shape: {inputs.shape}")
 
-        print(f"Moving inputs to device {self.device}, converting to float16...")
-        inputs = inputs.to(device=self.device, dtype=torch.float16)
+    def encode_image(self, image: str) -> Dict[str, torch.Tensor]:
+        image = self.open_image(image)
+        # print("Processing image data...")
+        # image_embeds = self.image_processor(images=image, return_tensors="pt")
+        # # torch.Size([1, 5, 3, 336, 336])
+        # print(f"Processed image, input tensor shape: {image_embeds['pixel_values'].shape}")
 
-        print("Running model forward pass...")
-        image_forward_outs = self.model(
-            inputs.to(device=self.device, dtype=torch.float32),
-            output_hidden_states=True,
-        )
-        print(
-            f"Model forward pass complete, received {len(image_forward_outs.hidden_states)} hidden states"
-        )
+        inputs = self.processor(text="<image>", images=image, return_tensors="pt")
+        # inputs = self.processor(images=image, return_tensors="pt")
 
-        print("Selecting features....")
-        image_features = self._feature_select(image_forward_outs).to(torch.float16)
-        print(f"Image features shape after selection: {image_features.shape}")
-
-        # yield EncodeResponse(image_features=image_features.tolist()).model_dump_json()
-        return image_features
-
-    def download_lora(self) -> str:
-        # downloaded_lora_path = self.peft_provider.download_entire_model(lora_name, checkpoint_name, lora_name)
-        # print("LoRA downloaded to temp directory %s", downloaded_lora_path)
-        # download the model to a subdirectory in the current directory
-        downloaded_lora_path = "/checkpoints/llava-v1.5-7b-task-lora"
-        return downloaded_lora_path
-
-    def multi_modal_project(
-        self, image: torch.Tensor, lora_name: str, checkpoint_name: Optional[str]
-    ) -> Tuple[torch.Tensor, str]:
-        print("Loading multi modal projector...")
-        mm_projector = self.load_multi_modal_projector(lora_name, checkpoint_name)
-        print("Projecting image...")
-        image_features = mm_projector.mm_project(image.to(device="cuda:1")).to(
-            self.device
-        )
-        print("Projected image features:", image_features)
-        return image_features, ""
-
-    @lru_cache(maxsize=5)
-    def load_multi_modal_projector(
-        self, lora_name: str, lora_path: str
-    ) -> LlavaForCausalLM:
-        print("load_multi_modal_projector...")
-        device_map = "cuda:1"
-        kwargs = {"device_map": device_map, "torch_dtype": torch.float16}
-
-        lora_cfg_pretrained = LlavaConfig.from_pretrained(
-            lora_path, low_cpu_mem_usage=True
-        )
-        print("LlavaConfig loaded...")
-        model = LlavaForCausalLM.from_pretrained(
-            self.MODEL_ID, low_cpu_mem_usage=True, config=lora_cfg_pretrained, **kwargs
-        )
-        print("LlavaForCausalLM loaded...")
-
-        if os.path.exists(os.path.join(lora_path, "non_lora_trainables.bin")):
-            print("non_lora_trainables.bin exists...")
-            non_lora_trainables = torch.load(
-                os.path.join(lora_path, "non_lora_trainables.bin"), map_location="cpu"
+        # Generate proper image embeddings
+        with torch.no_grad():
+            vision_outputs = self.vision_model.vision_tower(
+                inputs.pixel_values.to(self.vision_model.device)
             )
-            non_lora_trainables = {
-                (k[11:] if k.startswith("base_model.") else k): v
-                for k, v in non_lora_trainables.items()
-            }
-            if any(k.startswith("model.model.") for k in non_lora_trainables):
-                non_lora_trainables = {
-                    (k[6:] if k.startswith("model.") else k): v
-                    for k, v in non_lora_trainables.items()
-                }
-            model.load_state_dict(non_lora_trainables, strict=False)
-        else:
-            print("non_lora_trainables.bin does not exist...")
+            image_features = vision_outputs.last_hidden_state
+            image_embeds = self.vision_model.multi_modal_projector(image_features)
 
-        from peft import PeftModel
+        return image_embeds
 
-        model = PeftModel.from_pretrained(model, lora_path, low_cpu_mem_usage=True)
-        model = model.merge_and_unload(progressbar=True)
-        model.requires_grad_(False)
-        print("Multi modal projector model loaded for ", lora_name)
-        return model
+
+
+    
+

@@ -25,7 +25,7 @@ from vllm.inputs.data import TokensPrompt
 from vllm.outputs import CompletionOutput
 from vllm.sampling_params import SamplingParams
 from vllm.sequence import PromptLogprobs, RequestMetrics
-import torch
+
 
 class Request(BaseModel):
     prompt: str
@@ -102,10 +102,7 @@ class EncodeRequest(BaseModel):
 class EncodeResponse(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    # image_features: List[torch.Tensor]
     image_features: List[List[List[float]]]
-
-
 
 class MyRequestOutput(BaseModel):
     """

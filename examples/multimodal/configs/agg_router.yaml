@@ -13,45 +13,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 Common:
-  # model: microsoft/Phi-3.5-vision-instruct
-  model: llava-hf/llava-1.5-7b-hf
+  model: deepseek-ai/DeepSeek-R1-Distill-Llama-8B
+  router: kv
   block-size: 64
-  max-model-len: 4096
+  max-model-len: 16384
   kv-transfer-config: '{"kv_connector":"DynamoNixlConnector"}'
 
 Frontend:
-  # served_model_name: microsoft/Phi-3.5-vision-instruct
-  served_model_name: llava-hf/llava-1.5-7b-hf
+  served_model_name: deepseek-ai/DeepSeek-R1-Distill-Llama-8B
   endpoint: dynamo.Processor.chat/completions
   port: 8000
 
 Processor:
-  router: round-robin
-  common-configs: [model, block-size]
+  common-configs: [model, block-size, max-model-len, router]
+
+Router:
+  min-workers: 1
+  common-configs: [model]
 
 VllmWorker:
-  remote-prefill: true
-  conditional-disagg: true
-  max-local-prefill-length: 10
-  max-prefill-queue-size: 2
-  ServiceArgs:
-    workers: 1
-    resources:
-      gpu: 1
-  common-configs: [model, block-size, max-model-len, kv-transfer-config]
-
-PrefillWorker:
+  enforce-eager: true
   max-num-batched-tokens: 16384
-  ServiceArgs:
-    workers: 1
-    resources:
-      gpu: 1
-  common-configs: [model, block-size, max-model-len, kv-transfer-config]
-
-EncodeWorker:
+  enable-prefix-caching: true
   tensor-parallel-size: 1
-  router: random
   ServiceArgs:
     workers: 1
     resources:
       gpu: 1
+  common-configs: [model, block-size, max-model-len, router, kv-transfer-config]

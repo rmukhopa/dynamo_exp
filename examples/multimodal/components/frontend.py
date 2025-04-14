@@ -21,7 +21,6 @@ from pathlib import Path
 
 from components.processor import Processor
 from components.worker import VllmWorker
-from components.encode_worker import EncodeWorker
 from pydantic import BaseModel
 
 from dynamo import sdk

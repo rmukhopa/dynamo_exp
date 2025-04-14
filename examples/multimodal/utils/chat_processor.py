@@ -135,7 +135,7 @@ class ChatProcessor:
 
     async def preprocess(self, raw_request: ChatCompletionRequest) -> PreprocessResult:
         request = self.parse_raw_request(raw_request)
-
+        
         # Frontend WAR
         # If no chat template is provided and tokenizer doesn't have one,
         # use a simple format that just concatenates messages
@@ -207,7 +207,6 @@ class CompletionsProcessor:
         return CompletionRequest.parse_obj(raw_request)
 
     async def preprocess(self, raw_request: CompletionRequest) -> PreprocessResult:
-        
         request = self.parse_raw_request(raw_request)
 
         (

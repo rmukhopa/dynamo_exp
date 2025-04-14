@@ -12,14 +12,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from components.frontend import Frontend
-from components.prefill_worker import PrefillWorker
-from components.processor import Processor
-from components.worker import VllmWorker
-from components.encode_worker import EncodeWorker
-
-# Frontend.link(Processor).link(EncodeWorker).link(VllmWorker).link(PrefillWorker)
-# Frontend.link(Processor).link(VllmWorker).link(PrefillWorker)
-# Frontend.link(Processor).link(EncodeWorker).link(VllmWorker).link(PrefillWorker)
-Frontend.link(Processor).link(VllmWorker).link(PrefillWorker).link(EncodeWorker)
