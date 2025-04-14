@@ -21,6 +21,7 @@ use dynamo_llm::{
     backend::ExecutionContext, kv_router::publisher::KvMetricsPublisher,
     model_card::model::ModelDeploymentCard,
     types::openai::chat_completions::OpenAIChatCompletionsStreamingEngine,
+    types::openai::completions::OpenAICompletionsStreamingEngine,
 };
 use dynamo_runtime::{protocols::Endpoint, DistributedRuntime};
 
@@ -208,7 +209,8 @@ pub async fn run(
             EngineConfig::StaticFull {
                 card: Box::new(ModelDeploymentCard::with_name_only(&model_name)),
                 service_name: model_name,
-                engine: dynamo_llm::engines::make_engine_full(),
+                completions_engine: Some(dynamo_llm::engines::make_completions_engine_full()),
+                chat_completions_engine: dynamo_llm::engines::make_chat_completions_engine_full(),
             }
         }
         Output::EchoCore => {
@@ -239,7 +241,8 @@ pub async fn run(
             EngineConfig::StaticFull {
                 card: Box::new(ModelDeploymentCard::with_name_only(&model_name)),
                 service_name: model_name,
-                engine: dynamo_engine_mistralrs::make_engine(&model_path).await?,
+                chat_completions_engine: dynamo_engine_mistralrs::make_engine(&model_path).await?,
+                completions_engine: Some(dynamo_llm::engines::make_completions_engine_full()),
             }
         }
         #[cfg(feature = "sglang")]

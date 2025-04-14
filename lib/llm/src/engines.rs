@@ -20,6 +20,7 @@ use std::time::Duration;
 
 use async_stream::stream;
 use async_trait::async_trait;
+use async_openai::types::Prompt;
 
 use dynamo_runtime::engine::{AsyncEngine, AsyncEngineContextProvider, ResponseStream};
 use dynamo_runtime::pipeline::{Error, ManyOut, SingleIn};
@@ -31,7 +32,9 @@ use crate::protocols::common::llm_backend::LLMEngineOutput;
 use crate::protocols::openai::chat_completions::{
     NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse,
 };
+use crate::protocols::openai::completions::{CompletionRequest, CompletionResponse};
 use crate::types::openai::chat_completions::OpenAIChatCompletionsStreamingEngine;
+use crate::types::openai::completions::OpenAICompletionsStreamingEngine;
 
 //
 // The engines are each in their own crate under `lib/engines`
@@ -124,6 +127,14 @@ pub fn make_engine_full() -> OpenAIChatCompletionsStreamingEngine {
     Arc::new(EchoEngineFull {})
 }
 
+pub fn make_chat_completions_engine_full() -> OpenAIChatCompletionsStreamingEngine {
+    Arc::new(EchoEngineFull {})
+}
+
+pub fn make_completions_engine_full() -> OpenAICompletionsStreamingEngine {
+    Arc::new(EchoEngineFull {})
+}
+
 #[async_trait]
 impl
     AsyncEngine<
@@ -170,6 +181,45 @@ impl
             let response = NvCreateChatCompletionStreamResponse {
                 inner,
             };
+            yield Annotated { id: Some(id.to_string()), data: Some(response), event: None, comment: None };
+        };
+
+        Ok(ResponseStream::new(Box::pin(output), ctx))
+    }
+}
+
+#[async_trait]
+impl
+    AsyncEngine<
+        SingleIn<CompletionRequest>,
+        ManyOut<Annotated<CompletionResponse>>,
+        Error,
+    > for EchoEngineFull
+{
+    async fn generate(
+        &self,
+        incoming_request: SingleIn<CompletionRequest>,
+    ) -> Result<ManyOut<Annotated<CompletionResponse>>, Error> {
+        let (request, context) = incoming_request.transfer(());
+        let deltas = request.response_generator();
+        let ctx = context.context();
+        let chars_string = match request.inner.prompt {
+            Prompt::String(s) => s,
+            Prompt::StringArray(arr) => arr.join(""),
+            Prompt::IntegerArray(_) => anyhow::bail!("Integer array prompts not supported for echo"),
+            Prompt::ArrayOfIntegerArray(_) => anyhow::bail!("Array of integer array prompts not supported for echo"),
+        };
+
+        let output = stream! {
+            let mut id = 1;
+            for c in chars_string.chars() {
+                tokio::time::sleep(*TOKEN_ECHO_DELAY).await;
+                let response = deltas.create_choice(0, Some(c.to_string()), None);
+                yield Annotated{ id: Some(id.to_string()), data: Some(response), event: None, comment: None };
+                id += 1;
+            }
+
+            let response = deltas.create_choice(0, None, Some("stop".to_string()));
             yield Annotated { id: Some(id.to_string()), data: Some(response), event: None, comment: None };
         };
 
