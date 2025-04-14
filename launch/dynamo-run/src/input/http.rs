@@ -60,6 +60,7 @@ pub async fn run(
         .build()?;
     match engine_config {
         EngineConfig::Dynamic(endpoint) => {
+            tracing::debug!("Using Dynamic configuration with endpoint: {:?}", endpoint);
             let distributed_runtime = DistributedRuntime::from_settings(runtime.clone()).await?;
             match distributed_runtime.etcd_client() {
                 Some(etcd_client) => {
@@ -90,18 +91,24 @@ pub async fn run(
         }
         EngineConfig::StaticFull {
             service_name,
-            engine,
-            ..
+            chat_completions_engine,
+            completions_engine,
         } => {
+            tracing::info!("Using StaticFull configuration with service: {}", service_name);
             let manager = http_service.model_manager();
-            manager.add_chat_completions_model(&service_name, engine)?;
-            manager.add_completions_model(&service_name, engine)?;
+            manager.add_chat_completions_model(&service_name, chat_completions_engine)?;
+            manager.add_completions_model(&service_name, completions_engine.expect("Completions engine must be present"))?;
         }
         EngineConfig::StaticCore {
             service_name,
             engine: inner_engine,
             card,
         } => {
+            tracing::info!(
+                "Using StaticCore configuration with service: {}, card: {:?}",
+                service_name,
+                card
+            );
             let manager = http_service.model_manager();
             
             // Build and register chat pipeline

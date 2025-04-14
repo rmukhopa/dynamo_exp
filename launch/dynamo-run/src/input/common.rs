@@ -65,10 +65,11 @@ pub async fn prepare_engine(
         }
         EngineConfig::StaticFull {
             service_name,
-            engine,
+            completions_engine: _,
+            chat_completions_engine,
         } => {
             tracing::debug!("Model: {service_name}");
-            Ok((service_name, engine, false))
+            Ok((service_name, chat_completions_engine, false))
         }
         EngineConfig::StaticCore {
             service_name,
