@@ -109,9 +109,7 @@ spec:
 | `autoscaling`       | object   | Autoscaling rules for the deployment                                        | No       |         |
 | `envFromSecret`     | string   | Reference to a secret for injecting env vars                                | No       |         |
 | `pvc`               | object   | Persistent volume claim configuration                                       | No       |         |
-| `runMode`           | string   | Execution mode (e.g. InProcess, ExternalProcess)                            | No       |         |
 | `ingress`           | object   | Ingress configuration for exposing the service                              | No       |         |
-| `monitorExporter`   | object   | Configuration for Prometheus metric exporter                                | No       |         |
 | `extraPodMetadata`  | object   | Additional labels and annotations for the pod                               | No       |         |
 | `extraPodSpec`      | object   | Custom PodSpec fields to merge into the generated pod                       | No       |         |
 | `livenessProbe`     | object   | Kubernetes liveness probe                                                   | No       |         |
