@@ -52,8 +52,8 @@ DOCKERFILE=${SOURCE_DIR}/Dockerfile
 BUILD_CONTEXT=$(dirname "$(readlink -f "$SOURCE_DIR")")
 
 # Base Images
-TENSORRTLLM_BASE_IMAGE="ubuntu"
-TENSORRTLLM_BASE_IMAGE_TAG="24.04"
+TENSORRTLLM_BASE_IMAGE="nvcr.io/nvidia/cuda-dl-base"
+TENSORRTLLM_BASE_IMAGE_TAG="25.03-cuda12.8-devel-ubuntu24.04"
 TENSORRTLLM_PIP_WHEEL_PATH=""
 
 VLLM_BASE_IMAGE="nvcr.io/nvidia/cuda-dl-base"
