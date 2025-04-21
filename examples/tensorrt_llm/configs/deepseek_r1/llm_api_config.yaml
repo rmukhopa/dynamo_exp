@@ -18,5 +18,15 @@
 # the number of GPUs/parallelism according to your hardware.
 model_name: "/path/to/Deepseek/R1/FP4_weights"
 tensor_parallel_size: 4
-moe_expert_parallel_size: 1
+moe_expert_parallel_size: 4
 backend: pytorch
+
+# TODO: Test these
+max_num_tokens: 10240
+max_batch_size: 8
+
+kv_cache_config:
+  free_gpu_memory_fraction: 0.80
+pytorch_backend_config:
+  enable_overlap_scheduler: true
+  use_cuda_graph: true
