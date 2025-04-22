@@ -32,7 +32,7 @@ use dynamo_runtime::pipeline::{
 use dynamo_runtime::{protocols::Endpoint, DistributedRuntime};
 
 use crate::EngineConfig;
-use std::sync::Arc;  
+use std::sync::Arc;
 
 pub async fn run(
     distributed_runtime: DistributedRuntime,

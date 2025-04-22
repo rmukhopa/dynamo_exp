@@ -30,14 +30,14 @@ use dynamo_llm::{
         Annotated,
     },
     protocols::common::llm_backend::{BackendInput, BackendOutput},
-    engines::StreamingEngineAdapter,  
+    engines::StreamingEngineAdapter,
 };
 use dynamo_runtime::{
     pipeline::{
-        ManyOut, 
-        Operator, 
-        ServiceBackend, 
-        ServiceFrontend, 
+        ManyOut,
+        Operator,
+        ServiceBackend,
+        ServiceFrontend,
         SingleIn,
         Source,
         Context,
