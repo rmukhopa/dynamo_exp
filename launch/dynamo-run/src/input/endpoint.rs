@@ -22,6 +22,7 @@ use dynamo_llm::{
     model_card::{BUCKET_NAME, BUCKET_TTL},
     model_type::ModelType,
     preprocessor::OpenAIPreprocessor,
+    engines::StreamingEngineAdapter,
     types::{
         openai::chat_completions::{
             NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse,
@@ -35,6 +36,7 @@ use dynamo_runtime::pipeline::{
 use dynamo_runtime::{protocols::Endpoint, DistributedRuntime};
 
 use crate::EngineConfig;
+use std::sync::Arc;  
 
 pub async fn run(
     distributed_runtime: DistributedRuntime,
@@ -53,7 +55,10 @@ pub async fn run(
             service_name,
             engine,
             card,
-        } => (Ingress::for_engine(engine)?, service_name, card),
+        } => {
+            let engine = Arc::new(StreamingEngineAdapter::new(engine));
+            (Ingress::for_engine(engine)?, service_name)
+        }
         EngineConfig::StaticCore {
             service_name,
             engine: inner_engine,
