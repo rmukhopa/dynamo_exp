@@ -49,7 +49,8 @@ pub async fn run(
             service_name,
             engine,
         } => {
-            (Ingress::for_engine(engine)?, service_name)
+            //(Ingress::for_engine(engine)?, service_name)
+            todo!()
         }
         EngineConfig::StaticCore {
             service_name,
