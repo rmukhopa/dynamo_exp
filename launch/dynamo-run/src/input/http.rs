@@ -44,7 +44,6 @@ use dynamo_runtime::{
     engine::{Data, AsyncEngineStream},
     DistributedRuntime, Runtime,
 };
-
 use crate::{EngineConfig, Flags};
 
 /// Build and run an HTTP service
@@ -91,34 +90,26 @@ pub async fn run(
         }
         EngineConfig::StaticFull {
             service_name,
-            chat_completions_engine,
-            completions_engine,
+            engine,
         } => {
-            tracing::info!("Using StaticFull configuration with service: {}", service_name);
             let manager = http_service.model_manager();
-            manager.add_chat_completions_model(&service_name, chat_completions_engine)?;
-            manager.add_completions_model(&service_name, completions_engine.expect("Completions engine must be present"))?;
+            manager.add_chat_completions_model(&service_name, engine)?;
+            let cmpl_engine = dynamo_llm::engines::make_completions_engine_full;
+            //manager.add_completions_model(&service_name, engine)?;
         }
         EngineConfig::StaticCore {
             service_name,
             engine: inner_engine,
             card,
         } => {
-            tracing::info!(
-                "Using StaticCore configuration with service: {}, card: {:?}",
-                service_name,
-                card
-            );
             let manager = http_service.model_manager();
-            
-            // Build and register chat pipeline
+
             let chat_pipeline = build_pipeline::<
                 NvCreateChatCompletionRequest,
                 NvCreateChatCompletionStreamResponse
             >(&card, inner_engine.clone()).await?;
             manager.add_chat_completions_model(&service_name, chat_pipeline)?;
 
-            // Build and register completions pipeline
             let cmpl_pipeline = build_pipeline::<
                 CompletionRequest,
                 CompletionResponse

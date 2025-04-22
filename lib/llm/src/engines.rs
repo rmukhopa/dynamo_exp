@@ -127,9 +127,9 @@ pub fn make_engine_full() -> OpenAIChatCompletionsStreamingEngine {
     Arc::new(EchoEngineFull {})
 }
 
-pub fn make_chat_completions_engine_full() -> OpenAIChatCompletionsStreamingEngine {
-    Arc::new(EchoEngineFull {})
-}
+// pub fn make_chat_completions_engine_full() -> OpenAIChatCompletionsStreamingEngine {
+//     Arc::new(EchoEngineFull {})
+// }
 
 pub fn make_completions_engine_full() -> OpenAICompletionsStreamingEngine {
     Arc::new(EchoEngineFull {})

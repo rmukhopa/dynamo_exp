@@ -47,9 +47,10 @@ pub async fn run(
     let (ingress, service_name) = match engine_config {
         EngineConfig::StaticFull {
             service_name,
-            completions_engine: _,
-            chat_completions_engine,
-        } => (Ingress::for_engine(chat_completions_engine)?, service_name),
+            engine,
+        } => {
+            (Ingress::for_engine(engine)?, service_name)
+        }
         EngineConfig::StaticCore {
             service_name,
             engine: inner_engine,

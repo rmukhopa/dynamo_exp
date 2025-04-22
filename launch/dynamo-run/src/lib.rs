@@ -21,7 +21,6 @@ use dynamo_llm::{
     backend::ExecutionContext, kv_router::publisher::KvMetricsPublisher,
     model_card::model::ModelDeploymentCard,
     types::openai::chat_completions::OpenAIChatCompletionsStreamingEngine,
-    types::openai::completions::OpenAICompletionsStreamingEngine,
 };
 use dynamo_runtime::{protocols::Endpoint, DistributedRuntime};
 
@@ -61,8 +60,7 @@ pub enum EngineConfig {
     /// A Full service engine does it's own tokenization and prompt formatting.
     StaticFull {
         service_name: String,
-        completions_engine: Option<OpenAICompletionsStreamingEngine>,
-        chat_completions_engine: OpenAIChatCompletionsStreamingEngine,
+        engine: OpenAIChatCompletionsStreamingEngine,
     },
 
     /// A core engine expects to be wrapped with pre/post processors that handle tokenization.
@@ -206,8 +204,7 @@ pub async fn run(
             };
             EngineConfig::StaticFull {
                 service_name: model_name,
-                completions_engine: Some(dynamo_llm::engines::make_completions_engine_full()),
-                chat_completions_engine: dynamo_llm::engines::make_chat_completions_engine_full(),
+                engine: dynamo_llm::engines::make_engine_full(),
             }
         }
         Output::EchoCore => {
@@ -237,8 +234,7 @@ pub async fn run(
             };
             EngineConfig::StaticFull {
                 service_name: model_name,
-                chat_completions_engine: dynamo_engine_mistralrs::make_engine(&model_path).await?,
-                completions_engine: Some(dynamo_llm::engines::make_completions_engine_full()),
+                engine: dynamo_engine_mistralrs::make_engine(&model_path).await?,
             }
         }
         #[cfg(feature = "sglang")]
@@ -435,7 +431,8 @@ pub async fn run(
                 dynamo_engine_python::make_string_engine(cancel_token.clone(), &p, py_args).await?;
             EngineConfig::StaticFull {
                 service_name: model_name,
-                engine,
+                engine: engine,
+            
             }
         }
         #[cfg(feature = "python")]
