@@ -30,6 +30,7 @@ use dynamo_llm::{
         Annotated,
     },
     protocols::common::llm_backend::{BackendInput, BackendOutput},
+    engines::StreamingEngineAdapter,  
 };
 use dynamo_runtime::{
     pipeline::{
@@ -92,10 +93,10 @@ pub async fn run(
             service_name,
             engine,
         } => {
+            let engine = Arc::new(StreamingEngineAdapter::new(engine));
             let manager = http_service.model_manager();
+            manager.add_completions_model(&service_name, engine.clone())?;
             manager.add_chat_completions_model(&service_name, engine)?;
-            let cmpl_engine = dynamo_llm::engines::make_completions_engine_full;
-            //manager.add_completions_model(&service_name, engine)?;
         }
         EngineConfig::StaticCore {
             service_name,
@@ -148,3 +149,4 @@ where
         .link(preprocessor.backward_edge())?
         .link(frontend)?)
 }
+

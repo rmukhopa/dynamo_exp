@@ -69,7 +69,9 @@ pub async fn prepare_engine(
             card: _card,
         } => {
             tracing::debug!("Model: {service_name}");
-            Ok((service_name, engine, false))
+            //Ok((service_name, engine, false))
+
+            todo!()
         }
         EngineConfig::StaticCore {
             service_name,
