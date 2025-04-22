@@ -37,9 +37,9 @@ use crate::protocols::openai::chat_completions::{
 use crate::protocols::openai::completions::{CompletionRequest, CompletionResponse, DeltaGenerator};
 use crate::types::openai::chat_completions::OpenAIChatCompletionsStreamingEngine;
 use crate::types::openai::completions::OpenAICompletionsStreamingEngine;
-use dynamo_runtime::engine::AsyncEngineStream;  
+use dynamo_runtime::engine::AsyncEngineStream;
 use dynamo_runtime::{pipeline::Context};
-use dynamo_runtime::pipeline::ServerStreamingEngine; 
+use dynamo_runtime::pipeline::ServerStreamingEngine;
 //
 // The engines are each in their own crate under `lib/engines`
 //
@@ -128,7 +128,7 @@ fn delta_core(tok: u32) -> Annotated<LLMEngineOutput> {
 /// Useful for testing ingress such as service-http.
 struct EchoEngineFull {}
 
-/// Engine that dispatches requests to either OpenAICompletions 
+/// Engine that dispatches requests to either OpenAICompletions
 //or OpenAIChatCompletions engine
 struct EngineDispatcher<E> {
     inner: E,
@@ -143,9 +143,9 @@ impl<E> EngineDispatcher<E> {
 /// Trait that allows handling both completion and chat completions requests
 #[async_trait]
 pub trait StreamingEngine: Send + Sync {
-    async fn handle_completion(&self, req: SingleIn<CompletionRequest>) 
+    async fn handle_completion(&self, req: SingleIn<CompletionRequest>)
         -> Result<ManyOut<Annotated<CompletionResponse>>, Error>;
-    
+
     async fn handle_chat(&self, req: SingleIn<NvCreateChatCompletionRequest>)
         -> Result<ManyOut<Annotated<NvCreateChatCompletionStreamResponse>>, Error>;
 }
@@ -238,21 +238,21 @@ impl
             }
             let response = deltas.create_choice(0, None, Some("stop".to_string()));
             yield Annotated { id: Some(id.to_string()), data: Some(response), event: None, comment: None };
-        
-        };  
+
+        };
 
         Ok(ResponseStream::new(Box::pin(output), ctx))
     }
 }
 
 #[async_trait]
-impl<E> StreamingEngine for EngineDispatcher<E> 
-where 
-    E: AsyncEngine<SingleIn<CompletionRequest>, ManyOut<Annotated<CompletionResponse>>, Error> + 
+impl<E> StreamingEngine for EngineDispatcher<E>
+where
+    E: AsyncEngine<SingleIn<CompletionRequest>, ManyOut<Annotated<CompletionResponse>>, Error> +
        AsyncEngine<SingleIn<NvCreateChatCompletionRequest>, ManyOut<Annotated<NvCreateChatCompletionStreamResponse>>, Error> +
        Send + Sync,
 {
-    async fn handle_completion(&self, req: SingleIn<CompletionRequest>) 
+    async fn handle_completion(&self, req: SingleIn<CompletionRequest>)
         -> Result<ManyOut<Annotated<CompletionResponse>>, Error>
     {
         self.inner.generate(req).await
@@ -274,22 +274,22 @@ impl StreamingEngineAdapter {
 }
 
 #[async_trait]
-impl AsyncEngine<SingleIn<CompletionRequest>, ManyOut<Annotated<CompletionResponse>>, Error> 
-    for StreamingEngineAdapter 
+impl AsyncEngine<SingleIn<CompletionRequest>, ManyOut<Annotated<CompletionResponse>>, Error>
+    for StreamingEngineAdapter
 {
-    async fn generate(&self, req: SingleIn<CompletionRequest>) 
-        -> Result<ManyOut<Annotated<CompletionResponse>>, Error> 
+    async fn generate(&self, req: SingleIn<CompletionRequest>)
+        -> Result<ManyOut<Annotated<CompletionResponse>>, Error>
     {
         self.0.handle_completion(req).await
     }
 }
 
 #[async_trait]
-impl AsyncEngine<SingleIn<NvCreateChatCompletionRequest>, ManyOut<Annotated<NvCreateChatCompletionStreamResponse>>, Error> 
-    for StreamingEngineAdapter 
+impl AsyncEngine<SingleIn<NvCreateChatCompletionRequest>, ManyOut<Annotated<NvCreateChatCompletionStreamResponse>>, Error>
+    for StreamingEngineAdapter
 {
-    async fn generate(&self, req: SingleIn<NvCreateChatCompletionRequest>) 
-        -> Result<ManyOut<Annotated<NvCreateChatCompletionStreamResponse>>, Error> 
+    async fn generate(&self, req: SingleIn<NvCreateChatCompletionRequest>)
+        -> Result<ManyOut<Annotated<NvCreateChatCompletionStreamResponse>>, Error>
     {
         self.0.handle_chat(req).await
     }
