@@ -17,6 +17,7 @@ use crate::{flags::RouterMode, EngineConfig, Flags};
 use dynamo_llm::{
     backend::Backend,
     preprocessor::OpenAIPreprocessor,
+    engines::StreamingEngineAdapter,
     types::{
         openai::chat_completions::{
             NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse,
@@ -68,9 +69,8 @@ pub async fn prepare_engine(
             engine,
         } => {
             tracing::debug!("Model: {service_name}");
-            //Ok((service_name, engine, false))
-
-            todo!()
+            let engine = Arc::new(StreamingEngineAdapter::new(engine));
+            Ok((service_name, engine, false))
         }
         EngineConfig::StaticCore {
             service_name,
