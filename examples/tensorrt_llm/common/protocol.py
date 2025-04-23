@@ -144,11 +144,7 @@ class DisaggregatedTypeConverter:
                 request_type = tllm_disagg_params.get("request_type")
                 first_gen_tokens = tllm_disagg_params.get("first_gen_tokens")
                 ctx_request_id = tllm_disagg_params.get("ctx_request_id")
-
-                encoded_opaque_state = base64.b64encode(
-                    tllm_disagg_params.get("opaque_state")
-                ).decode("utf-8")
-
+                opaque_state = tllm_disagg_params.get("opaque_state")
             elif isinstance(
                 tllm_disagg_params,
                 tensorrt_llm.disaggregated_params.DisaggregatedParams,
@@ -156,15 +152,15 @@ class DisaggregatedTypeConverter:
                 request_type = tllm_disagg_params.request_type
                 first_gen_tokens = tllm_disagg_params.first_gen_tokens
                 ctx_request_id = tllm_disagg_params.ctx_request_id
-
-                encoded_opaque_state = base64.b64encode(
-                    tllm_disagg_params.opaque_state
-                ).decode("utf-8")
-
+                opaque_state = tllm_disagg_params.opaque_state
             else:
                 raise Exception(
                     f"Unexpected type for tllm_disagg_params: {type(tllm_disagg_params)}"
                 )
+
+            encoded_opaque_state = None
+            if opaque_state:
+                encoded_opaque_state = base64.b64encode(opaque_state).decode("utf-8")
 
             return DisaggregatedParams(
                 request_type=request_type,
