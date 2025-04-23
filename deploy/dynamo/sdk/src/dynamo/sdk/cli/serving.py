@@ -225,13 +225,32 @@ def create_dynamo_watcher(
     # use namespace from the service
     namespace, _ = svc.dynamo_address()
 
+    # TODO: Expose this setting to the services
+    import sys
+
+    if "TensorRTLLM" in svc.name:
+        args = [
+            "-np",
+            "1",
+            "--allow-run-as-root",
+            "--oversubscribe",
+            f"{sys.executable}",
+        ] + args
+        cmd = "mpirun"
+    else:
+        cmd = sys.executable
+
     # Create the watcher with updated environment
+    import signal
+
     watcher = create_watcher(
         name=f"{namespace}_{svc.name}",
+        cmd=cmd,
         args=args,
         numprocesses=num_workers,
         working_dir=working_dir,
         env=worker_env,
+        stop_signal=signal.SIGINT,
     )
 
     logger.info(f"Created watcher for {svc.name}'s in the {namespace} namespace")
