@@ -19,6 +19,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, List, Literal, Optional, Union
 
+import tensorrt_llm
 import torch
 from common.utils import ConversationMessage
 from pydantic import BaseModel, ConfigDict, Field
@@ -148,7 +149,10 @@ class DisaggregatedTypeConverter:
                     tllm_disagg_params.get("opaque_state")
                 ).decode("utf-8")
 
-            elif isinstance(tllm_disagg_params, DisaggregatedParams):
+            elif isinstance(
+                tllm_disagg_params,
+                tensorrt_llm.disaggregated_params.DisaggregatedParams,
+            ):
                 request_type = tllm_disagg_params.request_type
                 first_gen_tokens = tllm_disagg_params.first_gen_tokens
                 ctx_request_id = tllm_disagg_params.ctx_request_id
@@ -158,7 +162,9 @@ class DisaggregatedTypeConverter:
                 ).decode("utf-8")
 
             else:
-                raise Exception("Unexpected type for tllm_disagg_params")
+                raise Exception(
+                    f"Unexpected type for tllm_disagg_params: {type(tllm_disagg_params)}"
+                )
 
             return DisaggregatedParams(
                 request_type=request_type,
