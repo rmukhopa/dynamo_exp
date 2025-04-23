@@ -135,15 +135,35 @@ class DisaggregatedTypeConverter:
         else:
             print(f"=== DEBUG === {type(tllm_disagg_params)=}")
             print(f"=== DEBUG === {tllm_disagg_params=}")
-            encoded_opaque_state = None
-            if tllm_disagg_params and hasattr(tllm_disagg_params, "opaque_state"):
+            # FIXME: Why is this occasionally a `dict`?
+            if isinstance(tllm_disagg_params, dict):
+                # tllm_disagg_params = {
+                #   'request_type': 'generation_only', 'first_gen_tokens': [33413], 'ctx_request_id': 16, 'encoded_opaque_state': "..."
+                # }
+                request_type = tllm_disagg_params.get("request_type")
+                first_gen_tokens = tllm_disagg_params.get("first_gen_tokens")
+                ctx_request_id = tllm_disagg_params.get("ctx_request_id")
+
+                encoded_opaque_state = base64.b64encode(
+                    tllm_disagg_params.get("opaque_state")
+                ).decode("utf-8")
+
+            elif isinstance(tllm_disagg_params, DisaggregatedParams):
+                request_type = tllm_disagg_params.request_type
+                first_gen_tokens = tllm_disagg_params.first_gen_tokens
+                ctx_request_id = tllm_disagg_params.ctx_request_id
+
                 encoded_opaque_state = base64.b64encode(
                     tllm_disagg_params.opaque_state
                 ).decode("utf-8")
+
+            else:
+                raise Exception("Unexpected type for tllm_disagg_params")
+
             return DisaggregatedParams(
-                request_type=tllm_disagg_params.request_type,
-                first_gen_tokens=tllm_disagg_params.first_gen_tokens,
-                ctx_request_id=tllm_disagg_params.ctx_request_id,
+                request_type=request_type,
+                first_gen_tokens=first_gen_tokens,
+                ctx_request_id=ctx_request_id,
                 encoded_opaque_state=encoded_opaque_state,
             )
 
