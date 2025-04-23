@@ -133,11 +133,13 @@ class DisaggregatedTypeConverter:
         if tllm_disagg_params is None:
             return None
         else:
-            encoded_opaque_state = (
-                base64.b64encode(tllm_disagg_params.opaque_state).decode("utf-8")
-                if tllm_disagg_params is not None
-                else None
-            )
+            print(f"=== DEBUG === {type(tllm_disagg_params)=}")
+            print(f"=== DEBUG === {tllm_disagg_params=}")
+            encoded_opaque_state = None
+            if tllm_disagg_params and hasattr(tllm_disagg_params, "opaque_state"):
+                encoded_opaque_state = base64.b64encode(
+                    tllm_disagg_params.opaque_state
+                ).decode("utf-8")
             return DisaggregatedParams(
                 request_type=tllm_disagg_params.request_type,
                 first_gen_tokens=tllm_disagg_params.first_gen_tokens,
