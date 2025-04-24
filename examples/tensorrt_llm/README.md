@@ -163,6 +163,15 @@ FIXME and REMOVEME: Patch dynamo serve for `mpirun` usage on `slurm`:
 cp /lustre/fsw/core_dlfw_ci/rmccormick/dynamo_trtllm/dynamo_serve_patch.py /usr/local/lib/python3.12/dist-packages/dynamo/sdk/cli/serving.py
 ```
 
+In slurm based environments specifically, if you reserve a multi-node allocation, for example with `salloc -N 2 ...`
+and enter an interactive shell on each node to run commands with `srun -N 1 --jobid=<jobid> ...`, you may
+need to edit some slurm environment variables based on the use case:
+```bash
+# FIXME: This is a hack to avoid mpirun errors when trying to call srun on
+# multi-node slurm allocations.
+export SLURM_NODELIST=${HOSTNAME}
+```
+
 Launch graph of Frontend, (optionally include Router), and Decode worker. Note that
 the Prefill worker is intentionally excluded from the graph in `graphs/disagg_multinode.py`
 because this experiment will have the Prefill worker on a separate node, so we don't
