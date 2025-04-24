@@ -189,6 +189,8 @@ discoverability between nodes:
 ```bash
 # if not head node
 export HEAD_NODE_IP="<head-node-ip>"
+# TODO: REMOVE HARD CODED NODE NAME
+export HEAD_NODE_IP="ptyche0111"
 export NATS_SERVER="nats://${HEAD_NODE_IP}:4222"
 export ETCD_ENDPOINTS="${HEAD_NODE_IP}:2379"
 ```
