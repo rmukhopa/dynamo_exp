@@ -21,11 +21,9 @@ use std::time::Duration;
 use async_stream::stream;
 use async_trait::async_trait;
 use async_openai::types::Prompt;
-use futures::StreamExt;
-use std::pin::Pin;
 
 use dynamo_runtime::engine::{AsyncEngine, AsyncEngineContextProvider, ResponseStream};
-use dynamo_runtime::pipeline::{Error, ManyOut, SingleIn, AsyncEngineContext};
+use dynamo_runtime::pipeline::{Error, ManyOut, SingleIn};
 use dynamo_runtime::protocols::annotated::Annotated;
 
 use crate::backend::ExecutionContext;
@@ -34,12 +32,8 @@ use crate::protocols::common::llm_backend::LLMEngineOutput;
 use crate::protocols::openai::chat_completions::{
     NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse
 };
-use crate::protocols::openai::completions::{CompletionRequest, CompletionResponse, DeltaGenerator};
-use crate::types::openai::chat_completions::OpenAIChatCompletionsStreamingEngine;
-use crate::types::openai::completions::OpenAICompletionsStreamingEngine;
-use dynamo_runtime::engine::AsyncEngineStream;
-use dynamo_runtime::{pipeline::Context};
-use dynamo_runtime::pipeline::ServerStreamingEngine;
+use crate::protocols::openai::completions::{CompletionRequest, CompletionResponse};
+
 //
 // The engines are each in their own crate under `lib/engines`
 //
