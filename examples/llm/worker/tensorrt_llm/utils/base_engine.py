@@ -26,13 +26,6 @@ from enum import Enum
 from queue import Queue
 from typing import Any, Optional
 
-from common.parser import LLMAPIConfig
-from common.protocol import (
-    DisaggregatedTypeConverter,
-    TRTLLMWorkerRequest,
-    TRTLLMWorkerResponse,
-    TRTLLMWorkerResponseOutput,
-)
 from common.utils import ManagedThread, ServerType
 from tensorrt_llm.executor import CppExecutorError
 from tensorrt_llm.llmapi import LLM, SamplingParams
@@ -45,6 +38,13 @@ from tensorrt_llm.serve.openai_protocol import DisaggregatedParams
 from dynamo.llm import KvMetricsPublisher
 
 from .kv_cache_event_publisher import KVCacheEventPublisher
+from .parser import LLMAPIConfig
+from .protocol import (
+    DisaggregatedTypeConverter,
+    TRTLLMWorkerRequest,
+    TRTLLMWorkerResponse,
+    TRTLLMWorkerResponseOutput,
+)
 
 logger = logging.getLogger(__name__)
 

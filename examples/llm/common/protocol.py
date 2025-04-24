@@ -21,10 +21,6 @@ class Request(BaseModel):
     sampling_params: dict
 
 
-class PrefillRequest(Request):
-    request_id: str
-
-
 class Response(BaseModel):
     text: str
 
@@ -35,3 +31,7 @@ class PrefillResponse(BaseModel):
 
 class Tokens(BaseModel):
     tokens: list[int]
+
+
+class PrefillRequest(Request):
+    request_id: str

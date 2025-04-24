@@ -17,18 +17,6 @@ import logging
 from dataclasses import asdict
 from typing import Any, Dict, List, Union
 
-from common.parser import LLMAPIConfig
-from common.protocol import (
-    DisaggregatedTypeConverter,
-    DynamoTRTLLMChatCompletionResponseStreamChoice,
-    DynamoTRTLLMChatCompletionStreamResponse,
-    DynamoTRTLLMCompletionResponseStreamChoice,
-    DynamoTRTLLMCompletionStreamResponse,
-    Tokens,
-    TRTLLMWorkerRequest,
-    TRTLLMWorkerResponse,
-    TRTLLMWorkerResponseOutput,
-)
 from common.utils import ConversationMessage
 from openai.types.chat import ChatCompletionMessageParam
 from tensorrt_llm.llmapi.llm import RequestOutput
@@ -45,6 +33,19 @@ from tensorrt_llm.serve.openai_protocol import (
 from transformers import AutoTokenizer
 from transformers.tokenization_utils import PreTrainedTokenizer
 from transformers.tokenization_utils_fast import PreTrainedTokenizerFast
+
+from .parser import LLMAPIConfig
+from .protocol import (
+    DisaggregatedTypeConverter,
+    DynamoTRTLLMChatCompletionResponseStreamChoice,
+    DynamoTRTLLMChatCompletionStreamResponse,
+    DynamoTRTLLMCompletionResponseStreamChoice,
+    DynamoTRTLLMCompletionStreamResponse,
+    Tokens,
+    TRTLLMWorkerRequest,
+    TRTLLMWorkerResponse,
+    TRTLLMWorkerResponseOutput,
+)
 
 logger = logging.getLogger(__name__)
 

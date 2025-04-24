@@ -17,12 +17,11 @@ import argparse
 import logging
 from argparse import Namespace
 
-from components.worker import TensorRTLLMWorker
+from router.base_router import BaseRouter
+from worker.tensorrt_llm import TensorRTLLMWorker
 
 from dynamo.sdk import depends, service
 from dynamo.sdk.lib.config import ServiceConfig
-
-from .base_router import BaseRouter
 
 logger = logging.getLogger(__name__)
 

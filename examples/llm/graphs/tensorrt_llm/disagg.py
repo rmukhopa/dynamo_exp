@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from components.frontend import Frontend
-from components.kv_router import Router
-from components.processor import Processor
-from components.worker import TensorRTLLMWorker
+from api_server.tensorrt_llm import TensorRTLLMApiServer
+from processor.tensorrt_llm import Processor
+from worker.tensorrt_llm import TensorRTLLMPrefillWorker, TensorRTLLMWorker
 
-Frontend.link(Processor).link(Router).link(TensorRTLLMWorker)
+TensorRTLLMApiServer.link(Processor).link(TensorRTLLMWorker).link(
+    TensorRTLLMPrefillWorker
+)

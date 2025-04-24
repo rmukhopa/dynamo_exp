@@ -12,27 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from .kv_router import Router
 
-
-# In the case of disaggregated deployment, this config will apply to each server
-# and will be overwritten by the disaggregated config file
-
-# TODO: figure out how to generate this from the service config or vice versa
-
-model_name: "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
-model_path: null
-tensor_parallel_size: 1
-moe_expert_parallel_size: 1
-enable_attention_dp: false
-max_num_tokens: 8192
-max_batch_size: 16
-trust_remote_code: true
-backend: pytorch
-enable_chunked_prefill: true
-
-kv_cache_config:
-  free_gpu_memory_fraction: 0.95
-
-pytorch_backend_config:
-  enable_overlap_scheduler: true
-  use_cuda_graph: true
+__all__ = ["Router"]

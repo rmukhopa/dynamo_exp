@@ -15,14 +15,14 @@
 import asyncio
 import logging
 
-from common.base_engine import BaseTensorrtLLMEngine
-from common.parser import parse_tensorrt_llm_args
-from common.protocol import TRTLLMWorkerRequest
 from common.utils import ServerType
-from components.prefill_worker import TensorRTLLMPrefillWorker
 
-from dynamo.sdk import async_on_start, depends, dynamo_context, dynamo_endpoint, service
+from dynamo.sdk import async_on_start, dynamo_context, dynamo_endpoint, service
 from dynamo.sdk.lib.config import ServiceConfig
+
+from .utils.base_engine import BaseTensorrtLLMEngine
+from .utils.parser import parse_tensorrt_llm_args
+from .utils.protocol import TRTLLMWorkerRequest
 
 logger = logging.getLogger(__name__)
 
@@ -35,17 +35,14 @@ logger = logging.getLogger(__name__)
     resources={"gpu": 1, "cpu": "10", "memory": "20Gi"},
     workers=1,
 )
-class TensorRTLLMWorker(BaseTensorrtLLMEngine):
-    prefill_worker = depends(TensorRTLLMPrefillWorker)
-
+class TensorRTLLMPrefillWorker(BaseTensorrtLLMEngine):
     def __init__(self):
-        logger.info("Initializing TensorRT-LLM Worker")
+        logger.info("Initializing TensorRT-LLM Prefill Worker")
         class_name = self.__class__.__name__
         config = ServiceConfig.get_instance()
         config_args = config.as_args(class_name, prefix="")
         args, engine_config = parse_tensorrt_llm_args(config_args)
         worker_id = dynamo_context["endpoints"][0].lease_id()
-        self._min_prefill_workers = args.min_prefill_workers
         super().__init__(
             namespace_str="dynamo",
             component_str=class_name,
@@ -56,41 +53,22 @@ class TensorRTLLMWorker(BaseTensorrtLLMEngine):
             disagg_config_file=args.llmapi_disaggregated_config,
             block_size=args.block_size,
             router=args.router,
-            server_type=ServerType.GEN,
+            server_type=ServerType.CTX,
         )
 
     @async_on_start
     async def async_init(self):
         self._init_engine()
-
-        if self._remote_prefill:
-            runtime = dynamo_context["runtime"]
-            comp_ns, comp_name = TensorRTLLMPrefillWorker.dynamo_address()  # type: ignore
-            self._prefill_client = (
-                await runtime.namespace(comp_ns)
-                .component(comp_name)
-                .endpoint("generate")
-                .client()
-            )
-            while len(self._prefill_client.endpoint_ids()) < self._min_prefill_workers:
-                logger.info(
-                    f"Waiting for prefill workers to be ready.\n"
-                    f" Current: {len(self._prefill_client.endpoint_ids())},"
-                    f" Required: {self._min_prefill_workers}"
-                )
-                await asyncio.sleep(30)
-
         if self._kv_metrics_publisher is not None:
             task = asyncio.create_task(self.create_metrics_publisher_endpoint())
             task.add_done_callback(
                 lambda _: logger.info("metrics publisher endpoint created")
             )
-
-        logger.info("TensorRT-LLM Worker initialized")
+        logger.info("TensorRT-LLM Prefill Worker initialized")
 
     async def create_metrics_publisher_endpoint(self):
         component = dynamo_context["component"]
-        await self._kv_metrics_publisher.create_endpoint(component)
+        await self.kv_metrics_publisher.create_endpoint(component)
 
     @dynamo_endpoint()
     async def generate(self, request: TRTLLMWorkerRequest):

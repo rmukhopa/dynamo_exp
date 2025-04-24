@@ -12,10 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from .prefill_worker import TensorRTLLMPrefillWorker
+from .worker import TensorRTLLMWorker
 
-from components.frontend import Frontend
-from components.prefill_worker import TensorRTLLMPrefillWorker
-from components.processor import Processor
-from components.worker import TensorRTLLMWorker
-
-Frontend.link(Processor).link(TensorRTLLMWorker).link(TensorRTLLMPrefillWorker)
+__all__ = ["TensorRTLLMWorker", "TensorRTLLMPrefillWorker"]

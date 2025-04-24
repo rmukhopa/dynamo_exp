@@ -13,35 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Frontend:
+TensorRTLLMApiServer:
   served_model_name: deepseek-ai/DeepSeek-R1-Distill-Llama-8B
   endpoint: dynamo.Processor.chat/completions
   port: 8000
 
 Processor:
-  engine_args: "configs/llm_api_config_disagg_router.yaml"
-  router: "kv"
-  remote-prefill: true
+  engine_args: "graphs/tensorrt_llm/configs/llm_api_config_router.yaml"
+  router: kv
 
 Router:
-  model-name: deepseek-ai/DeepSeek-R1-Distill-Llama-8B
+  model: deepseek-ai/DeepSeek-R1-Distill-Llama-8B
   min-workers: 1
 
 TensorRTLLMWorker:
-  engine_args: "configs/llm_api_config_disagg_router.yaml"
-  llmapi-disaggregated-config: "configs/llmapi_disagg_configs/single_node_config.yaml"
-  remote-prefill: true
-  min-prefill-workers: 1
+  engine_args: "graphs/tensorrt_llm/configs/llm_api_config_router.yaml"
   router: kv
-  ServiceArgs:
-    workers: 1
-    resources:
-      gpu: 1
-
-TensorRTLLMPrefillWorker:
-  engine_args: "configs/llm_api_config_disagg_router.yaml"
-  llmapi-disaggregated-config: "configs/llmapi_disagg_configs/single_node_config.yaml"
-  router: round-robin
   ServiceArgs:
     workers: 1
     resources:

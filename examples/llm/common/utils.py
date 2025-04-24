@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import asyncio
 import logging
 import threading
@@ -26,15 +25,9 @@ from typing import Callable, Optional, TypedDict, Union
 logger = logging.getLogger(__name__)
 
 
-class RoutingStrategy(Enum):
-    ROUND_ROBIN = "round_robin"
-    RANDOM = "random"
-    PREFIX = "prefix"
-
-
-class RequestType(Enum):
-    CHAT = "chat"
-    COMPLETION = "completion"
+class ConversationMessage(TypedDict):
+    role: str
+    content: str
 
 
 class ServerType(Enum):
@@ -44,11 +37,6 @@ class ServerType(Enum):
     CTX = "ctx"
     # Dynamo run server used for Dynamo run requests
     DYN_RUN = "dyn_run"
-
-
-class ConversationMessage(TypedDict):
-    role: str
-    content: str
 
 
 class ManagedThread(threading.Thread):
