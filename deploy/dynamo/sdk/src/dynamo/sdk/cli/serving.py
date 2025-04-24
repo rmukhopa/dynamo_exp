@@ -26,6 +26,7 @@ import pathlib
 import platform
 import shutil
 import socket
+import sys
 import tempfile
 import typing as t
 from typing import Any, Dict, Optional, Protocol, TypeVar
@@ -131,8 +132,6 @@ def maybe_get_slurm_mpirun_command(service_name, args):
     # HACK: WAR issues with running MPI_Spawn in TRTLLM internals
     #       while in a Slurm environment.
     # FIXME: Find a better solution for running TRTLLM workers with `dynamo serve`
-    import sys
-
     is_slurm = os.environ.get("SLURM_NODELIST") is not None
     if is_slurm and "TensorRTLLM" in service_name:
         logger.info(
@@ -250,8 +249,6 @@ def create_dynamo_watcher(
     # use namespace from the service
     namespace, _ = svc.dynamo_address()
 
-    # HACK: WAR issues with running MPI_Spawn in TRTLLM internals
-    #       while in a Slurm environment.
     # FIXME: Find a better solution for running TRTLLM workers with `dynamo serve`
     cmd, args = maybe_get_slurm_mpirun_command(svc.name, args)
 
@@ -442,8 +439,6 @@ def serve_http(
                 except json.JSONDecodeError as e:
                     logger.warning(f"Failed to parse DYNAMO_SERVICE_ENVS: {e}")
 
-            # HACK: WAR issues with running MPI_Spawn in TRTLLM internals
-            #       while in a Slurm environment.
             # FIXME: Find a better solution for running TRTLLM workers with `dynamo serve`
             cmd, dynamo_args = maybe_get_slurm_mpirun_command(svc.name, dynamo_args)
 
