@@ -127,6 +127,31 @@ _BENTO_WORKER_SCRIPT = "_bentoml_impl.worker.service"
 _DYNAMO_WORKER_SCRIPT = "dynamo.sdk.cli.serve_dynamo"
 
 
+def maybe_get_slurm_mpirun_command(service_name, args):
+    # HACK: WAR issues with running MPI_Spawn in TRTLLM internals
+    #       while in a Slurm environment.
+    # FIXME: Find a better solution for running TRTLLM workers with `dynamo serve`
+    import sys
+
+    is_slurm = os.environ.get("SLURM_NODELIST") is not None
+    if is_slurm and "TensorRTLLM" in service_name:
+        logger.info(
+            "Slurm environment detected: Pre-pending `mpirun` to TRTLLM workers."
+        )
+        args = [
+            "-np",
+            "1",
+            "--allow-run-as-root",
+            "--oversubscribe",
+            f"{sys.executable}",
+        ] + args
+        cmd = "mpirun"
+    else:
+        cmd = sys.executable
+
+    return cmd, args
+
+
 def _get_dynamo_worker_script(bento_identifier: str, svc_name: str) -> list[str]:
     args = [
         "-m",
@@ -228,23 +253,7 @@ def create_dynamo_watcher(
     # HACK: WAR issues with running MPI_Spawn in TRTLLM internals
     #       while in a Slurm environment.
     # FIXME: Find a better solution for running TRTLLM workers with `dynamo serve`
-    import sys
-
-    is_slurm = os.environ.get("SLURM_NODELIST") is not None
-    if is_slurm and "TensorRTLLM" in svc.name:
-        logger.info(
-            "Slurm environment detected: Pre-pending `mpirun` to TRTLLM workers."
-        )
-        args = [
-            "-np",
-            "1",
-            "--allow-run-as-root",
-            "--oversubscribe",
-            f"{sys.executable}",
-        ] + args
-        cmd = "mpirun"
-    else:
-        cmd = sys.executable
+    cmd, args = maybe_get_slurm_mpirun_command(svc.name, args)
 
     # Create the watcher with updated environment
     watcher = create_watcher(
@@ -433,8 +442,14 @@ def serve_http(
                 except json.JSONDecodeError as e:
                     logger.warning(f"Failed to parse DYNAMO_SERVICE_ENVS: {e}")
 
+            # HACK: WAR issues with running MPI_Spawn in TRTLLM internals
+            #       while in a Slurm environment.
+            # FIXME: Find a better solution for running TRTLLM workers with `dynamo serve`
+            cmd, dynamo_args = maybe_get_slurm_mpirun_command(svc.name, dynamo_args)
+
             watcher = create_watcher(
                 name=f"{namespace}_{svc.name}",
+                cmd=cmd,
                 args=dynamo_args,
                 numprocesses=num_workers,
                 working_dir=str(bento_path.absolute()),
