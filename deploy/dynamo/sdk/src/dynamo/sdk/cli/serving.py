@@ -225,9 +225,31 @@ def create_dynamo_watcher(
     # use namespace from the service
     namespace, _ = svc.dynamo_address()
 
+    # HACK: WAR issues with running MPI_Spawn in TRTLLM internals
+    #       while in a Slurm environment.
+    # FIXME: Find a better solution for running TRTLLM workers with `dynamo serve`
+    import sys
+
+    is_slurm = os.environ.get("SLURM_NODELIST") is not None
+    if is_slurm and "TensorRTLLM" in svc.name:
+        logger.info(
+            "Slurm environment detected: Pre-pending `mpirun` to TRTLLM workers."
+        )
+        args = [
+            "-np",
+            "1",
+            "--allow-run-as-root",
+            "--oversubscribe",
+            f"{sys.executable}",
+        ] + args
+        cmd = "mpirun"
+    else:
+        cmd = sys.executable
+
     # Create the watcher with updated environment
     watcher = create_watcher(
         name=f"{namespace}_{svc.name}",
+        cmd=cmd,
         args=args,
         numprocesses=num_workers,
         working_dir=working_dir,
