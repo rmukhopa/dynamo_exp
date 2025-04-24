@@ -27,23 +27,6 @@ from vllm.sampling_params import SamplingParams
 from vllm.sequence import PromptLogprobs, RequestMetrics
 
 
-class Request(BaseModel):
-    prompt: str
-    sampling_params: dict
-
-
-class PrefillRequest(Request):
-    request_id: str
-
-
-class Response(BaseModel):
-    text: str
-
-
-class PrefillResponse(BaseModel):
-    prefilled: bool
-
-
 # Hack to override the type of multi_modal_data in TokensPrompt
 # as pydantic doesn't understand generic types
 # TokensPrompt is defined here: https://github.com/vllm-project/vllm/blob/a4c402a756fa3213caf9d2cde0e4ceb2d57727f2/vllm/inputs/data.py#L38
