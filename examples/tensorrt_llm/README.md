@@ -163,7 +163,7 @@ FIXME and REMOVEME: Patch dynamo serve for `mpirun` usage on `slurm`:
 cp /lustre/fsw/core_dlfw_ci/rmccormick/dynamo_trtllm/dynamo_serve_patch.py /usr/local/lib/python3.12/dist-packages/dynamo/sdk/cli/serving.py
 ```
 
-In slurm based environments specifically, if you reserve a multi-node allocation, for example with `salloc -N 2 ...`
+FIXME and REMOVEME: In slurm based environments specifically, if you reserve a multi-node allocation, for example with `salloc -N 2 ...`
 and enter an interactive shell on each node to run commands with `srun -N 1 --jobid=<jobid> ...`, you may
 need to edit some slurm environment variables based on the use case:
 ```bash
@@ -189,8 +189,6 @@ discoverability between nodes:
 ```bash
 # if not head node
 export HEAD_NODE_IP="<head-node-ip>"
-# TODO: REMOVE HARD CODED NODE NAME
-export HEAD_NODE_IP="ptyche0111"
 export NATS_SERVER="nats://${HEAD_NODE_IP}:4222"
 export ETCD_ENDPOINTS="${HEAD_NODE_IP}:2379"
 ```
@@ -200,11 +198,24 @@ FIXME and REMOVEME: Patch dynamo serve for `mpirun` usage on `slurm`:
 cp /lustre/fsw/core_dlfw_ci/rmccormick/dynamo_trtllm/dynamo_serve_patch.py /usr/local/lib/python3.12/dist-packages/dynamo/sdk/cli/serving.py
 ```
 
+FIXME and REMOVEME: In slurm based environments specifically, if you reserve a multi-node allocation, for example with `salloc -N 2 ...`
+and enter an interactive shell on each node to run commands with `srun -N 1 --jobid=<jobid> ...`, you may
+need to edit some slurm environment variables based on the use case:
+```bash
+# FIXME: This is a hack to avoid mpirun errors when trying to call srun on
+# multi-node slurm allocations.
+export SLURM_NODELIST=${HOSTNAME}
+```
+
 Deploy a Prefill worker:
 ```
 cd /workspace/examples/tensorrt_llm
 dynamo serve components.prefill_worker:TensorRTLLMPrefillWorker -f ./configs/disagg.yaml
 ```
+
+##### Client
+
+To send a request to the disaggregated deployment, target the head node which deployed the `Frontend`.
 
 ### Client
 
