@@ -150,12 +150,17 @@ in similar ways.
 ##### Head Node
 
 Start nats/etcd:
-```
+```bash
 # TODO: Check if a command like this is needed instead of 0.0.0.0:
 # etcd --listen-client-urls http://${HOSTNAME}:2379 --listen-client-urls http://${HOSTNAME}:2379,http://127.0.0.1:
 
 nats-server -js &
 etcd --listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://0.0.0.0:2379 &
+```
+
+FIXME and REMOVEME: Patch dynamo serve for `mpirun` usage on `slurm`:
+```bash
+cp /lustre/fsw/core_dlfw_ci/rmccormick/dynamo_trtllm/dynamo_serve_patch.py /usr/local/lib/python3.12/dist-packages/dynamo/sdk/cli/serving.py
 ```
 
 Launch graph of Frontend, (optionally include Router), and Decode worker. Note that
@@ -174,8 +179,14 @@ so the Dynamo Distributed Runtime can orchestrate communication and
 discoverability between nodes:
 ```bash
 # if not head node
-export NATS_SERVER="nats://<head-node-ip>:4222"
-export ETCD_ENDPOINTS="<head-node-ip>:2379"
+export HEAD_NODE_IP="<head-node-ip>"
+export NATS_SERVER="nats://${HEAD_NODE_IP}:4222"
+export ETCD_ENDPOINTS="${HEAD_NODE_IP}:2379"
+```
+
+FIXME and REMOVEME: Patch dynamo serve for `mpirun` usage on `slurm`:
+```bash
+cp /lustre/fsw/core_dlfw_ci/rmccormick/dynamo_trtllm/dynamo_serve_patch.py /usr/local/lib/python3.12/dist-packages/dynamo/sdk/cli/serving.py
 ```
 
 Deploy a Prefill worker:
