@@ -48,7 +48,7 @@ maturin develop --uv
 
 ## Run Examples
 
-### Pre-requisite
+### Prerequisite
 
 See [README.md](../runtime/README.md#prerequisites).
 

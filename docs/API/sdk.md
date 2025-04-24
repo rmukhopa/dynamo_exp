@@ -14,7 +14,7 @@
 
 Dynamo is a flexible and performant distributed inferencing solution for large-scale deployments. It is an ecosystem of tools, frameworks, and abstractions that makes the design, customization, and deployment of frontier-level models onto datacenter-scale infrastructure easy to reason about and optimized for your specific inferencing workloads. Dynamo's core is written in Rust and contains a set of well-defined Python bindings. Docs and examples for those can be found [here](./python_bindings.md).
 
-Dynamo SDK is a layer on top of the core. It is a Python framework that makes it easy to create inference graphs and deploy them locally and onto a target K8s cluster. The SDK was heavily inspired by [BentoML's](https://github.com/bentoml/BentoML) open source deployment patterns and leverages many of its core primitives. The Dynamo CLI is a companion tool that allows you to spin up an inference pipeline locally, containerize it, and deploy it. You can find a toy hello-world example and instructions for deploying it [here](../examples/hello_world.md).
+Dynamo SDK is a layer on top of the core. It is a Python framework that makes it easy to create inference graphs and deploy them locally and onto a target K8s cluster. The SDK was heavily inspired by [BentoML's](https://github.com/bentoml/BentoML) open source deployment patterns and leverages many of its core primitives. The Dynamo CLI is a companion tool that allows you to spin up an inference pipeline locally, containerize it, and deploy it. You can find a toy hello-world example and instructions for deploying it [here](../Examples/hello_world.md).
 
 ## Installation
 
@@ -25,7 +25,7 @@ pip install ai-dynamo
 ```
 
 ## Core Concepts
-As you read about each concept, it is helpful to have the [basic example](../examples/hello_world.md) up as well so you can refer back to it.
+As you read about each concept, it is helpful to have the [basic example](../Examples/hello_world.md) up as well so you can refer back to it.
 
 ### Defining a Service
 
@@ -395,7 +395,7 @@ The service will receive the combined configuration with the command-line value 
 Following these practices will help you create flexible and maintainable Dynamo services that can be easily configured for different environments and use cases.
 
 ### Deploying a Single Service
-You can deploy a single service for local development even if you have a dependancy graph defined using `depends()` using `dynamo serve --service-name <ClassName> <entrypoint> <configuration arguments>`. You can see an example of this in our multinode documentation [here](../examples/multinode.md).
+You can deploy a single service for local development even if you have a dependancy graph defined using `depends()` using `dynamo serve --service-name <ClassName> <entrypoint> <configuration arguments>`. You can see an example of this in our multinode documentation [here](../Examples/multinode.md).
 
 ### Composing Services into an Graph
 There are two main ways to compose services in Dynamo:

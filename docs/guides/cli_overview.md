@@ -11,7 +11,7 @@ At a high level, the Dynamo CLI allows you to:
 
 ### `run`
 
-The `run` command allows you to quickly chat with a model. Under the hood - it is running the `dynamo-run` Rust binary. You can find the arguments that it takes here: [dynamo-run docs](../../../../../launch/README.md)
+The `run` command allows you to quickly chat with a model. Under the hood - it is running the `dynamo-run` Rust binary. You can find the arguments that it takes here: [dynamo-run docs](dynamo_run.md)
 
 **Example**
 ```bash
@@ -31,11 +31,11 @@ dynamo serve [SERVICE]
 - `SERVICE` - The service to start. You use file:Class syntax to specify the service.
 
 **Flags**
-- `--file`/`-f` - Path to optional YAML configuration file. An example of the YAML file can be found in the configuration section of the [SDK docs](../sdk/README.md)
+- `--file`/`-f` - Path to optional YAML configuration file. An example of the YAML file can be found in the configuration section of the [SDK docs](../API/sdk.md)
 - `--dry-run` - Print out the dependency graph and values without starting any services.
 - `--service-name` - Only serve the specified service name. The rest of the discoverable components in the graph are not started.
 - `--working-dir` - Specify the directory to find the Service instance
-- Any additional flags that follow Class.key=value will be passed to the service constructor for the target service and parsed. Please see the configuration section of the [SDK docs](../sdk/README.md) for more details.
+- Any additional flags that follow Class.key=value will be passed to the service constructor for the target service and parsed. Please see the configuration section of the [SDK docs](../API/sdk.md) for more details.
 
 **Example**
 ```bash

@@ -156,7 +156,9 @@ curl localhost:8000/v1/chat/completions   -H "Content-Type: application/json"   
 
 ### Multi-node deployment
 
-See [multinode-examples.md](multinode-examples.md) for more details.
+<!-- Should [multinode-examples.md](multinode-examples.md) be  [multinode.md](multinode.md) -->
+
+See [multinode.md](multinode.md) for more details.
 
 ### Close deployment
 
