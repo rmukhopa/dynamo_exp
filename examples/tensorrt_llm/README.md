@@ -158,7 +158,8 @@ nats-server -js &
 etcd --listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://0.0.0.0:2379 &
 ```
 
-FIXME and REMOVEME: Patch dynamo serve for `mpirun` usage on `slurm`:
+FIXME and REMOVEME: Patch dynamo serve for `mpirun` usage on `slurm`, this file comes from this branch:
+https://github.com/ai-dynamo/dynamo/compare/main...rmccormick/trtllm/slurm_mpirun_war
 ```bash
 cp /lustre/fsw/core_dlfw_ci/rmccormick/dynamo_trtllm/dynamo_serve_patch.py /usr/local/lib/python3.12/dist-packages/dynamo/sdk/cli/serving.py
 ```
@@ -193,7 +194,8 @@ export NATS_SERVER="nats://${HEAD_NODE_IP}:4222"
 export ETCD_ENDPOINTS="${HEAD_NODE_IP}:2379"
 ```
 
-FIXME and REMOVEME: Patch dynamo serve for `mpirun` usage on `slurm`:
+FIXME and REMOVEME: Patch dynamo serve for `mpirun` usage on `slurm`, this file comes from this branch:
+https://github.com/ai-dynamo/dynamo/compare/main...rmccormick/trtllm/slurm_mpirun_war
 ```bash
 cp /lustre/fsw/core_dlfw_ci/rmccormick/dynamo_trtllm/dynamo_serve_patch.py /usr/local/lib/python3.12/dist-packages/dynamo/sdk/cli/serving.py
 ```
