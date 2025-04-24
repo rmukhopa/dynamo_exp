@@ -20,7 +20,6 @@ use std::{io::Read, sync::Arc};
 use dynamo_llm::{
     backend::ExecutionContext, kv_router::publisher::KvMetricsPublisher,
     model_card::model::ModelDeploymentCard,
-    types::openai::chat_completions::OpenAIChatCompletionsStreamingEngine,
     engines::StreamingEngine,
 };
 use dynamo_runtime::{protocols::Endpoint, DistributedRuntime};

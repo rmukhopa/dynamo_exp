@@ -20,7 +20,6 @@ use std::time::Duration;
 
 use async_stream::stream;
 use async_trait::async_trait;
-use async_openai::types::Prompt;
 
 use dynamo_runtime::engine::{AsyncEngine, AsyncEngineContextProvider, ResponseStream};
 use dynamo_runtime::pipeline::{Error, ManyOut, SingleIn};
