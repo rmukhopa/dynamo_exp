@@ -13,22 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from api_server.base_api_server import BaseApiServer
-from processor.vllm import vLLMProcessor
-from worker.vllm import vLLMWorker
+Frontend:
+  served_model_name: deepseek-ai/DeepSeek-R1-Distill-Llama-8B
+  endpoint: dynamo.Processor.chat/completions
+  port: 8000
 
-from dynamo.sdk import depends, service
-from dynamo.sdk.lib.image import DYNAMO_IMAGE
+Processor:
+  engine_args: "configs/llm_api_config.yaml"
+  router: round-robin
 
-
-@service(
-    resources={"cpu": "10", "memory": "20Gi"},
-    workers=1,
-    image=DYNAMO_IMAGE,
-)
-class vLLMApiServer(BaseApiServer):
-    worker = depends(vLLMWorker)
-    processor = depends(vLLMProcessor)
-
-    def __init__(self):
-        super().__init__(config_name="vLLMApiServer")
+TensorRTLLMWorker:
+  engine_args: "configs/llm_api_config.yaml"
+  router: round-robin
+  ServiceArgs:
+    workers: 1
+    resources:
+      gpu: 1

@@ -13,22 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from api_server.base_api_server import BaseApiServer
-from processor.vllm import vLLMProcessor
-from worker.vllm import vLLMWorker
 
-from dynamo.sdk import depends, service
-from dynamo.sdk.lib.image import DYNAMO_IMAGE
+# In the case of disaggregated deployment, this config will apply to each server
+# and will be overwritten by the disaggregated config file
 
+# TODO: figure out how to generate this from the service config or vice versa
 
-@service(
-    resources={"cpu": "10", "memory": "20Gi"},
-    workers=1,
-    image=DYNAMO_IMAGE,
-)
-class vLLMApiServer(BaseApiServer):
-    worker = depends(vLLMWorker)
-    processor = depends(vLLMProcessor)
+model_name: "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+model_path: null
+tensor_parallel_size: 1
+moe_expert_parallel_size: 1
+enable_attention_dp: false
+max_num_tokens: 8192
+max_batch_size: 16
+trust_remote_code: true
+backend: pytorch
+enable_chunked_prefill: true
 
-    def __init__(self):
-        super().__init__(config_name="vLLMApiServer")
+kv_cache_config:
+  free_gpu_memory_fraction: 0.95
+
+pytorch_backend_config:
+  enable_overlap_scheduler: true
+  use_cuda_graph: true

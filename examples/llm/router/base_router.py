@@ -22,9 +22,7 @@ from argparse import Namespace
 from typing import AsyncIterator
 
 from common.logging import check_required_workers
-
-# TODO[oandreeva]: restructure to use general protocol
-from vllm_examples.utils.protocol import Tokens
+from common.protocol import Tokens
 
 from dynamo.llm import AggregatedMetrics, KvIndexer, KvMetricsAggregator, OverlapScores
 from dynamo.sdk import async_on_start, dynamo_context, dynamo_endpoint

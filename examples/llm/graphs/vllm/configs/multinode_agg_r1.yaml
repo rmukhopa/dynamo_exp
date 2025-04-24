@@ -12,23 +12,28 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+Common:
+  model: deepseek-ai/DeepSeek-R1
+  block-size: 64
+  max-model-len: 16384
 
-from api_server.base_api_server import BaseApiServer
-from processor.vllm import vLLMProcessor
-from worker.vllm import vLLMWorker
+Frontend:
+  served_model_name: deepseek-ai/DeepSeek-R1
+  endpoint: dynamo.Processor.chat/completions
+  port: 8000
 
-from dynamo.sdk import depends, service
-from dynamo.sdk.lib.image import DYNAMO_IMAGE
+Processor:
+  router: round-robin
+  common-configs: [model, block-size, max-model-len]
 
-
-@service(
-    resources={"cpu": "10", "memory": "20Gi"},
-    workers=1,
-    image=DYNAMO_IMAGE,
-)
-class vLLMApiServer(BaseApiServer):
-    worker = depends(vLLMWorker)
-    processor = depends(vLLMProcessor)
-
-    def __init__(self):
-        super().__init__(config_name="vLLMApiServer")
+VllmWorker:
+  enforce-eager: true
+  max-num-batched-tokens: 16384
+  enable-prefix-caching: true
+  router: random
+  tensor-parallel-size: 16
+  ServiceArgs:
+    workers: 1
+    resources:
+      gpu: 1
+  common-configs: [model, block-size, max-model-len]

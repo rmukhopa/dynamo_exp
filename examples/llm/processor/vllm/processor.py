@@ -17,6 +17,7 @@ import logging
 import uuid
 from typing import AsyncIterator, Tuple, Union
 
+from common.protocol import Tokens
 from processor.base_processor import BaseProcessor, RequestType
 from router.vllm import Router
 from transformers import AutoTokenizer
@@ -24,17 +25,14 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.entrypoints.openai.protocol import ChatCompletionRequest, CompletionRequest
 from vllm.outputs import RequestOutput
 from vllm.transformers_utils.tokenizer import AnyTokenizer
-from vllm_examples.utils.chat_processor import (
-    ChatProcessor,
-    CompletionsProcessor,
-    ProcessMixIn,
-)
-from vllm_examples.utils.protocol import MyRequestOutput, Tokens, vLLMGenerateRequest
-from vllm_examples.utils.vllm_utils import parse_vllm_args
 from worker.vllm import vLLMWorker
 
 from dynamo.runtime import EtcdKvCache
 from dynamo.sdk import async_on_start, depends, dynamo_endpoint, service
+
+from .utils.chat_processor import ChatProcessor, CompletionsProcessor, ProcessMixIn
+from .utils.protocol import MyRequestOutput, vLLMGenerateRequest
+from .utils.vllm_utils import parse_vllm_args
 
 logger = logging.getLogger(__name__)
 
@@ -80,10 +78,6 @@ class vLLMProcessor(BaseProcessor, ProcessMixIn):
             "/dynamo/processor/",
             {"router": self.engine_args.router},
         )
-
-    def get_router_mode(self) -> str:
-        """Get the router mode from configuration"""
-        return self.engine_args.router
 
     @dynamo_endpoint(name="chat/completions")
     async def generate_chat(self, raw_request: ChatCompletionRequest):

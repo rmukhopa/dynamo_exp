@@ -18,7 +18,8 @@ from typing import Optional
 
 import msgspec
 from vllm.remote_prefill import RemotePrefillRequest
-from vllm_examples.utils.nats_queue import NATSQueue
+
+from .utils.nats_queue import NATSQueue
 
 
 class PrefillQueue(NATSQueue):

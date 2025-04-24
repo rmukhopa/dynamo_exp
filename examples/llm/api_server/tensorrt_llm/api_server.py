@@ -14,8 +14,8 @@
 # limitations under the License.
 
 from api_server.base_api_server import BaseApiServer
-from processor.vllm import vLLMProcessor
-from worker.vllm import vLLMWorker
+from processor.tensorrt_llm import Processor
+from worker.tensorrt_llm import TensorRTLLMWorker
 
 from dynamo.sdk import depends, service
 from dynamo.sdk.lib.image import DYNAMO_IMAGE
@@ -26,9 +26,9 @@ from dynamo.sdk.lib.image import DYNAMO_IMAGE
     workers=1,
     image=DYNAMO_IMAGE,
 )
-class vLLMApiServer(BaseApiServer):
-    worker = depends(vLLMWorker)
-    processor = depends(vLLMProcessor)
+class TensorRTLLMApiServer(BaseApiServer):
+    worker = depends(TensorRTLLMWorker)
+    processor = depends(Processor)
 
     def __init__(self):
-        super().__init__(config_name="vLLMApiServer")
+        super().__init__(config_name="TensorRTLLMApiServer")

@@ -12,23 +12,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from api_server.base_api_server import BaseApiServer
-from processor.vllm import vLLMProcessor
-from worker.vllm import vLLMWorker
-
-from dynamo.sdk import depends, service
-from dynamo.sdk.lib.image import DYNAMO_IMAGE
-
-
-@service(
-    resources={"cpu": "10", "memory": "20Gi"},
-    workers=1,
-    image=DYNAMO_IMAGE,
-)
-class vLLMApiServer(BaseApiServer):
-    worker = depends(vLLMWorker)
-    processor = depends(vLLMProcessor)
-
-    def __init__(self):
-        super().__init__(config_name="vLLMApiServer")
