@@ -139,6 +139,51 @@ dynamo serve graphs.disagg_router:Frontend -f ./configs/disagg_router.yaml
 We are defining TRTLLM_USE_UCX_KVCACHE so that TRTLLM uses UCX for transfering the KV
 cache between the context and generation workers.
 
+#### Multi-node Disaggregated Serving
+
+In the following example, we will demonstrate how to run a Disaggregated Serving
+deployment across multiple nodes. For simplicity, we will demonstrate how to
+deploy a single Decode worker on one node, and a single Prefill worker on the other node.
+However, the instance counts, TP sizes, and other configs, can be customized and deployed
+in similar ways.
+
+##### Head Node
+
+Start nats/etcd:
+```
+# TODO: Check if a command like this is needed instead of 0.0.0.0:
+# etcd --listen-client-urls http://${HOSTNAME}:2379 --listen-client-urls http://${HOSTNAME}:2379,http://127.0.0.1:
+
+nats-server -js &
+etcd --listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://0.0.0.0:2379 &
+```
+
+Launch graph of Frontend, (optionally include Router), and Decode worker. Note that
+the Prefill worker is intentionally excluded from the graph in `graphs/disagg_multinode.py`
+because this experiment will have the Prefill worker on a separate node, so we don't
+need to launch it on this node.
+```bash
+cd /workspace/examples/tensorrt_llm
+dynamo serve graphs.disagg_multinode:Frontend -f ./configs/disagg.yaml
+```
+
+##### Worker Node(s)
+
+Set environment variables pointing at the etcd/nats endpoints on the head node
+so the Dynamo Distributed Runtime can orchestrate communication and
+discoverability between nodes:
+```bash
+# if not head node
+export NATS_SERVER="nats://<head-node-ip>:4222"
+export ETCD_ENDPOINTS="<head-node-ip>:2379"
+```
+
+Deploy a Prefill worker:
+```
+cd /workspace/examples/tensorrt_llm
+dynamo serve components.prefill_worker:TensorRTLLMPrefillWorker -f ./configs/disagg.yaml
+```
+
 ### Client
 
 See [client](../llm/README.md#client) section to learn how to send request to the deployment.
