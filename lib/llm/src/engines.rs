@@ -32,7 +32,7 @@ use crate::protocols::common::llm_backend::LLMEngineOutput;
 use crate::protocols::openai::chat_completions::{
     NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse
 };
-use crate::protocols::openai::completions::{CompletionRequest, CompletionResponse};
+use crate::protocols::openai::completions::{CompletionRequest, CompletionResponse, prompt_to_string};
 
 //
 // The engines are each in their own crate under `lib/engines`
@@ -124,7 +124,7 @@ struct EchoEngineFull {}
 
 /// Engine that dispatches requests to either OpenAICompletions
 //or OpenAIChatCompletions engine
-struct EngineDispatcher<E> {
+pub struct EngineDispatcher<E> {
     inner: E,
 }
 
@@ -216,12 +216,7 @@ impl
         let (request, context) = incoming_request.transfer(());
         let deltas = request.response_generator();
         let ctx = context.context();
-        let chars_string = match request.inner.prompt {
-            Prompt::String(s) => s,
-            Prompt::StringArray(arr) => arr.join(""),
-            Prompt::IntegerArray(_) => panic!("Integer array prompts not supported"),
-            Prompt::ArrayOfIntegerArray(_) => panic!("Array of integer array prompts not supported"),
-        };
+        let chars_string = prompt_to_string(&request.inner.prompt);
         let output = stream! {
             let mut id = 1;
             for c in chars_string.chars() {
