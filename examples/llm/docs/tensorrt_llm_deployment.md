@@ -128,17 +128,11 @@ cd $DYNAMO_HOME/examples/llm
 dynamo serve graphs.tensorrt_llm.disagg:TensorRTLLMApiServer -f ./graphs/tensorrt_llm/configs/disagg.yaml
 ```
 
-By defining `TRTLLM_USE_UCX_KVCACHE` we configure TensorRT-LLM to use UCX for transfering the KV
-cache between the context and generation workers.
-
 #### Disaggregated serving with KV Routing
 ```bash
 cd $DYNAMO_HOME/examples/llm
 dynamo serve graphs.tensorrt_llm.disagg_router:TensorRTLLMApiServer -f ./graphs/tensorrt_llm/configs/disagg_router.yaml
 ```
-
-By defining `TRTLLM_USE_UCX_KVCACHE` we configure TensorRT-LLM to use UCX for transfering the KV
-cache between the context and generation workers.
 
 ### Client
 
