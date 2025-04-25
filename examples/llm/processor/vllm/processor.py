@@ -25,7 +25,7 @@ from vllm.engine.arg_utils import AsyncEngineArgs
 from vllm.entrypoints.openai.protocol import ChatCompletionRequest, CompletionRequest
 from vllm.outputs import RequestOutput
 from vllm.transformers_utils.tokenizer import AnyTokenizer
-from worker.vllm import vLLMWorker
+from worker.vllm import VllmWorker
 
 from dynamo.runtime import EtcdKvCache
 from dynamo.sdk import async_on_start, depends, dynamo_endpoint, service
@@ -50,7 +50,7 @@ class vLLMProcessor(BaseProcessor, ProcessMixIn):
     vLLM pre and post processing
     """
 
-    worker_class = vLLMWorker
+    worker_class = VllmWorker
     router_class = Router
 
     worker = depends(worker_class)

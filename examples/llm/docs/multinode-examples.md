@@ -45,12 +45,12 @@ docker compose -f deploy/docker-compose.yml up -d
 
 **Step 2**: Create the inference graph for this node. Here we will use the `agg_router.py`
 (even though we are doing disaggregated serving) graph because we want the `Frontend`,
-`Processor`, `Router`, and `vLLMWorker` to spin up (we will spin up the other decode
+`Processor`, `Router`, and `VllmWorker` to spin up (we will spin up the other decode
 worker and prefill worker separately on different nodes later).
 
 ```python
 # examples/llm/graphs/vllm/agg.py
-vLLMApiServer.link(vLLMProcessor).link(vLLMWorker)
+vLLMApiServer.link(vLLMProcessor).link(VllmWorker)
 ```
 
 **Step 3**: Create a configuration file for this node. We've provided a sample one for you
@@ -59,7 +59,7 @@ Note that we still include the `PrefillWorker` component in the configuration fi
  we are not using it on node 1. This is because we can reuse the same configuration file on all nodes
  and just spin up individual workers on the other ones.
 
-**Step 4**: Start the frontend, processor, router, and vLLMWorker on node 1.
+**Step 4**: Start the frontend, processor, router, and VllmWorker on node 1.
 ```bash
 # node 1
 cd $DYNAMO_HOME/examples/llm
@@ -237,7 +237,7 @@ export NATS_SERVER='nats://<nats-server-ip>:4222'
 export ETCD_ENDPOINTS='<etcd-endpoints-ip>:2379'
 
 cd $DYNAMO_HOME/examples/llm
-dynamo serve worker.vllm.prefill_worker:vLLMPrefillWorker -f ./graphs/vllm/configs/multinode_disagg_r1.yaml
+dynamo serve worker.vllm.prefill_worker:PrefillWorker -f ./graphs/vllm/configs/multinode_disagg_r1.yaml
 ```
 
 ### Client

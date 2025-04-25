@@ -15,7 +15,7 @@
 
 from api_server.base_api_server import BaseApiServer
 from processor.vllm import vLLMProcessor
-from worker.vllm import vLLMWorker
+from worker.vllm import VllmWorker
 
 from dynamo.sdk import depends, service
 from dynamo.sdk.lib.image import DYNAMO_IMAGE
@@ -27,7 +27,7 @@ from dynamo.sdk.lib.image import DYNAMO_IMAGE
     image=DYNAMO_IMAGE,
 )
 class vLLMApiServer(BaseApiServer):
-    worker = depends(vLLMWorker)
+    worker = depends(VllmWorker)
     processor = depends(vLLMProcessor)
 
     def __init__(self):

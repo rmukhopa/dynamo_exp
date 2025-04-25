@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .worker import vLLMWorker
+from .prefill_worker import PrefillWorker
+from .worker import VllmWorker
 
-__all__ = ["vLLMWorker"]
+__all__ = ["VllmWorker", "PrefillWorker"]

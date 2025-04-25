@@ -30,7 +30,7 @@ from dynamo.llm import KvMetricsPublisher
 from dynamo.sdk import async_on_start, depends, dynamo_context, dynamo_endpoint, service
 from dynamo.sdk.lib.service import LeaseConfig
 
-from .prefill_worker import vLLMPrefillWorker
+from .prefill_worker import PrefillWorker
 from .utils.arg_parser import parse_vllm_args
 from .utils.nixl import NixlMetadataStore
 from .utils.prefill_queue import PrefillQueue
@@ -48,8 +48,8 @@ logger = logging.getLogger(__name__)
     resources={"gpu": 1, "cpu": "10", "memory": "20Gi"},
     workers=1,
 )
-class vLLMWorker:
-    prefill_worker = depends(vLLMPrefillWorker)
+class VllmWorker:
+    prefill_worker = depends(PrefillWorker)
 
     def __init__(self):
         self.client = None

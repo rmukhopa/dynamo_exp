@@ -15,6 +15,6 @@
 
 from api_server.vllm import vLLMApiServer
 from processor.vllm import vLLMProcessor
-from worker.vllm import vLLMWorker
+from worker.vllm import VllmWorker
 
-vLLMApiServer.link(vLLMProcessor).link(vLLMWorker)
+vLLMApiServer.link(vLLMProcessor).link(VllmWorker)

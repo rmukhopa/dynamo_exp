@@ -31,7 +31,7 @@ Router:
   min-workers: 1
   common-configs: [model]
 
-vLLMWorker:
+VllmWorker:
   enforce-eager: true
   max-num-batched-tokens: 16384
   enable-prefix-caching: true

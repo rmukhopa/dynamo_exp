@@ -26,7 +26,7 @@ vLLMProcessor:
   router: round-robin
   common-configs: [model, block-size, max-model-len]
 
-vLLMWorker:
+VllmWorker:
   enforce-eager: true
   max-num-batched-tokens: 16384
   enable-prefix-caching: true

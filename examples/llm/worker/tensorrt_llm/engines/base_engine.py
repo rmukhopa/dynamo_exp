@@ -37,9 +37,9 @@ from tensorrt_llm.serve.openai_protocol import DisaggregatedParams
 
 from dynamo.llm import KvMetricsPublisher
 
-from .kv_cache_event_publisher import KVCacheEventPublisher
-from .parser import LLMAPIConfig
-from .protocol import (
+from ..utils.kv_cache_event_publisher import KVCacheEventPublisher
+from ..utils.parser import LLMAPIConfig
+from ..utils.protocol import (
     DisaggregatedTypeConverter,
     TRTLLMWorkerRequest,
     TRTLLMWorkerResponse,

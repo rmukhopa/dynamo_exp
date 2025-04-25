@@ -20,7 +20,7 @@ from common.utils import ServerType
 from dynamo.sdk import async_on_start, dynamo_context, dynamo_endpoint, service
 from dynamo.sdk.lib.config import ServiceConfig
 
-from .utils.base_engine import BaseTensorrtLLMEngine
+from .engines.base_engine import BaseTensorrtLLMEngine
 from .utils.parser import parse_tensorrt_llm_args
 from .utils.protocol import TRTLLMWorkerRequest
 
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
     resources={"gpu": 1, "cpu": "10", "memory": "20Gi"},
     workers=1,
 )
-class TensorRTLLMPrefillWorker(BaseTensorrtLLMEngine):
+class PrefillWorker(BaseTensorrtLLMEngine):
     def __init__(self):
         logger.info("Initializing TensorRT-LLM Prefill Worker")
         class_name = self.__class__.__name__

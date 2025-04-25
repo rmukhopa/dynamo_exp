@@ -19,7 +19,7 @@ from typing import Optional
 import msgspec
 from vllm.remote_prefill import RemotePrefillRequest
 
-from .utils.nats_queue import NATSQueue
+from .nats_queue import NATSQueue
 
 
 class PrefillQueue(NATSQueue):

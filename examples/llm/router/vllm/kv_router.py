@@ -17,7 +17,7 @@
 import logging
 
 from router.base_router import BaseRouter
-from worker.vllm import vLLMWorker
+from worker.vllm import VllmWorker
 
 from dynamo.sdk import depends, service
 
@@ -37,8 +37,8 @@ logger = logging.getLogger(__name__)
 class Router(BaseRouter):
     """VLLM-specific router implementation"""
 
-    worker = depends(vLLMWorker)
+    worker = depends(VllmWorker)
 
     def __init__(self):
         super().__init__()
-        self.worker_name = "vLLMWorker"
+        self.worker_name = "VllmWorker"

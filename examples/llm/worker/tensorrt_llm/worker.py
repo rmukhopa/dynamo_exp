@@ -20,8 +20,8 @@ from common.utils import ServerType
 from dynamo.sdk import async_on_start, depends, dynamo_context, dynamo_endpoint, service
 from dynamo.sdk.lib.config import ServiceConfig
 
-from .prefill_worker import TensorRTLLMPrefillWorker
-from .utils.base_engine import BaseTensorrtLLMEngine
+from .engines.base_engine import BaseTensorrtLLMEngine
+from .prefill_worker import PrefillWorker
 from .utils.parser import parse_tensorrt_llm_args
 from .utils.protocol import TRTLLMWorkerRequest
 
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
     workers=1,
 )
 class TensorRTLLMWorker(BaseTensorrtLLMEngine):
-    prefill_worker = depends(TensorRTLLMPrefillWorker)
+    prefill_worker = depends(PrefillWorker)
 
     def __init__(self):
         logger.info("Initializing TensorRT-LLM Worker")
@@ -66,7 +66,7 @@ class TensorRTLLMWorker(BaseTensorrtLLMEngine):
 
         if self._remote_prefill:
             runtime = dynamo_context["runtime"]
-            comp_ns, comp_name = TensorRTLLMPrefillWorker.dynamo_address()  # type: ignore
+            comp_ns, comp_name = PrefillWorker.dynamo_address()  # type: ignore
             self._prefill_client = (
                 await runtime.namespace(comp_ns)
                 .component(comp_name)

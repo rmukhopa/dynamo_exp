@@ -15,8 +15,6 @@
 
 from api_server.tensorrt_llm import TensorRTLLMApiServer
 from processor.tensorrt_llm import Processor
-from worker.tensorrt_llm import TensorRTLLMPrefillWorker, TensorRTLLMWorker
+from worker.tensorrt_llm import PrefillWorker, TensorRTLLMWorker
 
-TensorRTLLMApiServer.link(Processor).link(TensorRTLLMWorker).link(
-    TensorRTLLMPrefillWorker
-)
+TensorRTLLMApiServer.link(Processor).link(TensorRTLLMWorker).link(PrefillWorker)

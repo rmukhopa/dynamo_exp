@@ -48,7 +48,7 @@ class RequestType(BaseModel):
     resources={"gpu": 1, "cpu": "10", "memory": "20Gi"},
     workers=1,
 )
-class vLLMPrefillWorker:
+class PrefillWorker:
     def __init__(self):
         class_name = self.__class__.__name__
         self.engine_args = parse_vllm_args(class_name, "")
