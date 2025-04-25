@@ -429,6 +429,7 @@ class CompletionsProcessor:
 
         return TRTLLMWorkerRequest(
             id=request.id,
+            model=request.model,
             prompt=prompt,
             sampling_params=asdict(sampling_params),
             disaggregated_params=request.disaggregated_params,

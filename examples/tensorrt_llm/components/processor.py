@@ -19,7 +19,7 @@ import logging
 
 from common.chat_processor import ChatProcessorMixin
 from common.parser import parse_tensorrt_llm_args
-from common.protocol import DynamoTRTLLMChatCompletionRequest
+from common.protocol import DynamoTRTLLMCompletionRequest, DynamoTRTLLMChatCompletionRequest
 from common.utils import RequestType
 from components.kv_router import Router
 from components.worker import TensorRTLLMWorker
@@ -141,22 +141,22 @@ class Processor(ChatProcessorMixin):
                 logger.debug(f"[preprocessor] Response: {response}")
                 yield json.loads(response)
 
-    @dynamo_endpoint(name="chat/completions")
-    async def generate_chat(self, raw_request: DynamoTRTLLMChatCompletionRequest):
-        # max_tokens is deprecated, however if the max_tokens is provided instead
-        # of max_completion_tokens, we will use the value as max_completion_tokens.
-        if raw_request.max_tokens is not None:
-            if raw_request.max_completion_tokens is None:
-                raw_request.max_completion_tokens = raw_request.max_tokens
-            else:
-                if raw_request.max_tokens != raw_request.max_completion_tokens:
-                    raise ValueError(
-                        "max_tokens and max_completion_tokens must be the same"
-                    )
-        async for response in self._generate(raw_request, RequestType.CHAT):
-            yield response
+#    @dynamo_endpoint(name="chat/completions")
+#    async def generate_chat(self, raw_request: DynamoTRTLLMChatCompletionRequest):
+#        # max_tokens is deprecated, however if the max_tokens is provided instead
+#        # of max_completion_tokens, we will use the value as max_completion_tokens.#
+#        if raw_request.max_tokens is not None:
+#            if raw_request.max_completion_tokens is None:
+#                raw_request.max_completion_tokens = raw_request.max_tokens
+#            else:
+#                if raw_request.max_tokens != raw_request.max_completion_tokens:
+#                    raise ValueError(
+#                        "max_tokens and max_completion_tokens must be the same"
+#                    )
+#        async for response in self._generate(raw_request, RequestType.CHAT):
+#            yield response
 
-    # @dynamo_endpoint()
-    # async def completions(self, raw_request):
-    #     async for response in self._generate(raw_request, RequestType.COMPLETION):
-    #         yield response
+    @dynamo_endpoint(name="completions")
+    async def completions(self, raw_request: DynamoTRTLLMCompletionRequest):
+        async for response in self._generate(raw_request, RequestType.COMPLETION):
+            yield response

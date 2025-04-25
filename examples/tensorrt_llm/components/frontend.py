@@ -63,7 +63,7 @@ class Frontend:
                 "llmctl",
                 "http",
                 "remove",
-                "chat-models",
+                "completions",
                 frontend_config.served_model_name,
             ]
         )
@@ -72,7 +72,7 @@ class Frontend:
                 "llmctl",
                 "http",
                 "add",
-                "chat-models",
+                "completions",
                 frontend_config.served_model_name,
                 frontend_config.endpoint,
             ]
