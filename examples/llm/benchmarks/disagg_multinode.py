@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from components.frontend import Frontend
-from components.kv_router import Router
-from components.processor import Processor
-from components.worker import VllmWorker
+from api_server.vllm import vLLMApiServer
+from router.vllm import Router
+from processor.vllm import Processor
+from worker.vllm import VllmWorker
 
-Frontend.link(Processor).link(Router).link(VllmWorker)
+vLLMApiServer.link(Processor).link(Router).link(VllmWorker)

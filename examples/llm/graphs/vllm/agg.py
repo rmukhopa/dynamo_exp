@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from api_server.vllm import vLLMApiServer
-from processor.vllm import vLLMProcessor
+from processor.vllm import Processor
 from worker.vllm import VllmWorker
 
-vLLMApiServer.link(vLLMProcessor).link(VllmWorker)
+vLLMApiServer.link(Processor).link(VllmWorker)

@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
     resources={"cpu": "10", "memory": "20Gi"},
     workers=1,
 )
-class vLLMProcessor(BaseProcessor, ProcessMixIn):
+class Processor(BaseProcessor, ProcessMixIn):
     """
     vLLM pre and post processing
     """

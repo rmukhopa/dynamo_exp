@@ -19,10 +19,10 @@ Common:
 
 vLLMApiServer:
   served_model_name: deepseek-ai/DeepSeek-R1-Distill-Llama-8B
-  endpoint: dynamo.vLLMProcessor.chat/completions
+  endpoint: dynamo.Processor.chat/completions
   port: 8000
 
-vLLMProcessor:
+Processor:
   router: round-robin
   common-configs: [model, block-size, max-model-len]
 

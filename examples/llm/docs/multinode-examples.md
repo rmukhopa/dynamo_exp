@@ -50,7 +50,7 @@ worker and prefill worker separately on different nodes later).
 
 ```python
 # examples/llm/graphs/vllm/agg.py
-vLLMApiServer.link(vLLMProcessor).link(VllmWorker)
+vLLMApiServer.link(Processor).link(VllmWorker)
 ```
 
 **Step 3**: Create a configuration file for this node. We've provided a sample one for you

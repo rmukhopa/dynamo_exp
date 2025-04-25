@@ -18,7 +18,7 @@ Common:
   max-model-len: 16384
   kv-transfer-config: '{"kv_connector":"DynamoNixlConnector"}'
 
-Frontend:
+vLLMApiServer:
   served_model_name: deepseek-ai/DeepSeek-R1-Distill-Llama-8B
   endpoint: dynamo.Processor.chat/completions
   port: 8000

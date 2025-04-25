@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from api_server.base_api_server import BaseApiServer
-from processor.vllm import vLLMProcessor
+from processor.vllm import Processor
 from worker.vllm import VllmWorker
 
 from dynamo.sdk import depends, service
@@ -28,7 +28,7 @@ from dynamo.sdk.lib.image import DYNAMO_IMAGE
 )
 class vLLMApiServer(BaseApiServer):
     worker = depends(VllmWorker)
-    processor = depends(vLLMProcessor)
+    processor = depends(Processor)
 
     def __init__(self):
         super().__init__(config_name="vLLMApiServer")
