@@ -228,6 +228,7 @@ cd /workspace/examples/tensorrt_llm
 dynamo serve graphs.agg:Frontend -f ./configs/deepseek_r1_4xB200_disagg.yaml &
 
 # On worker node - deploy prefill worker only
+cd /workspace/examples/tensorrt_llm
 dynamo serve components.prefill_worker:TensorRTLLMPrefillWorker -f ./configs/deepseek_r1_4xB200_disagg.yaml &
 ```
 
