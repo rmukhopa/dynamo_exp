@@ -190,11 +190,10 @@ class ChatProcessor(BaseChatProcessor):
                 finish_reason=None,
             )
             if response.outputs[0].disaggregated_params is not None:
-                choice.disaggregated_params = (
-                    DisaggregatedTypeConverter.to_oai_disaggregated_params(
-                        response.outputs[0].disaggregated_params
-                    )
-                )
+                # Do not include the disaggregated params in response
+                # from Processor.
+                pass
+
             chunk = DynamoTRTLLMChatCompletionStreamResponse(
                 id=request_id,
                 choices=[choice],
@@ -272,11 +271,9 @@ class ChatProcessor(BaseChatProcessor):
                 choice.stop_reason = output.stop_reason
                 finish_reason_sent[i] = True
             if output.disaggregated_params is not None:
-                choice.disaggregated_params = (
-                    DisaggregatedTypeConverter.to_oai_disaggregated_params(
-                        output.disaggregated_params
-                    )
-                )
+                # Block the disaggregated params at processor level
+                pass
+
             chunk = DynamoTRTLLMChatCompletionStreamResponse(
                 id=request_id,
                 choices=[choice],
