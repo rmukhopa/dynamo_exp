@@ -31,7 +31,7 @@ use dynamo_runtime::{
 };
 use std::sync::Arc;
 
-/// Turns an EngineConfig into an OpenAIChatCompletionsStreamingEngine.
+/// Turns an EngineConfig into an OpenAI chat-completions and completions supported StreamingEngine.
 pub async fn prepare_engine(
     runtime: Runtime,
     flags: Flags,
