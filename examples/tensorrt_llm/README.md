@@ -174,12 +174,14 @@ export SLURM_NODELIST=${HOSTNAME}
 ```
 
 Launch graph of Frontend, (optionally include Router), and Decode worker. Note that
-the Prefill worker is intentionally excluded from the graph in `graphs/disagg_multinode.py`
-because this experiment will have the Prefill worker on a separate node, so we don't
-need to launch it on this node.
+the Prefill worker is intentionally excluded from the graph  because this experiment
+will have the Prefill worker on a separate node, so we don't need to launch it on
+this node. Therefore, we can just use the aggregated graph defined in `graphs/agg.py`
+to launch these components.
+
 ```bash
 cd /workspace/examples/tensorrt_llm
-dynamo serve graphs.disagg_multinode:Frontend -f ./configs/disagg.yaml
+dynamo serve graphs.agg:Frontend -f ./configs/disagg.yaml
 ```
 
 ##### Worker Node(s)
@@ -213,6 +215,19 @@ Deploy a Prefill worker:
 ```
 cd /workspace/examples/tensorrt_llm
 dynamo serve components.prefill_worker:TensorRTLLMPrefillWorker -f ./configs/disagg.yaml
+```
+
+Now you have a 2-node deployment with 1 Decode worker on node1, and 1 Prefill worker on node2!
+
+To apply the same concepts to a larger model like DeepSeek R1 FP4 on GB200, you can follow the same
+steps but replacing the config files involed, or write your own custom config files:
+```bash
+# On head node - deploy decode worker, frontend, and processor
+cd /workspace/examples/tensorrt_llm
+dynamo serve graphs.agg:Frontend -f ./configs/deepseek_r1_4xB200_disagg.yaml
+
+# On worker node - deploy prefill worker only
+dynamo serve components.prefill_worker:TensorRTLLMPrefillWorker -f ./configs/deepseek_r1_4xB200_disagg.yaml
 ```
 
 ##### Client
