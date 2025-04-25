@@ -151,11 +151,12 @@ in similar ways.
 
 Start nats/etcd:
 ```bash
-# TODO: Check if a command like this is needed instead of 0.0.0.0:
-# etcd --listen-client-urls http://${HOSTNAME}:2379 --listen-client-urls http://${HOSTNAME}:2379,http://127.0.0.1:
-
+# NATS data persisted to /tmp/nats/jetstream by default
 nats-server -js &
-etcd --listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://0.0.0.0:2379 &
+
+# Persist data to /tmp/etcd, otherwise defaults to ${PWD}/default.etcd if left unspecified
+# NOTE: Clearing out the etcd data dir across runs helps to guarantee a clean and reproducible run
+etcd --listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://0.0.0.0:2379 --data-dir /tmp/etcd &
 ```
 
 FIXME and REMOVEME: Patch dynamo serve for `mpirun` usage on `slurm`, this file comes from this branch:
