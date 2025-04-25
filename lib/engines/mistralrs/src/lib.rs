@@ -388,6 +388,7 @@ impl
         let (request, context) = request.transfer(());
         let ctx = context.context();
         let (tx, mut rx) = channel(10_000);
+        let response_generator = request.response_generator();
 
         let messages = RequestMessage::Completion {
             text: prompt_to_string(&request.inner.prompt),
@@ -459,11 +460,9 @@ impl
                     }
                 };
                 match response {
-                    ResponseOk::Chunk(c) => {
-                        let Some(from_assistant) = c.choices[0].delta.content.clone() else {
-                            tracing::warn!(request_id, "No content from mistralrs. Abandoning request.");
-                            break;
-                        };
+                    ResponseOk::CompletionChunk(c) => {
+                        let from_assistant = c.choices[0].text.clone();
+
                         let finish_reason = match &c.choices[0].finish_reason.as_deref() {
                             Some("stop") | Some("canceled") => {
                                 Some(FinishReason::Stop)
@@ -477,8 +476,6 @@ impl
                             }
                             None => None,
                         };
-                        //tracing::trace!("from_assistant: {from_assistant}");
-                        let response_generator = request.response_generator();
                         #[allow(deprecated)]
                         let inner = response_generator.create_choice(0, Some(from_assistant), None);
                         let ann = Annotated{
@@ -490,7 +487,6 @@ impl
                         yield ann;
 
                         if finish_reason.is_some() {
-                            //tracing::trace!(request_id, "Finish reason: {finish_reason:?}");
                             break;
                         }
                     },
