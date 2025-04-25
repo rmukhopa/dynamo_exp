@@ -19,7 +19,6 @@ from typing import Any, Dict, List, Union
 
 from common.parser import LLMAPIConfig
 from common.protocol import (
-    DisaggregatedTypeConverter,
     DynamoTRTLLMChatCompletionResponseStreamChoice,
     DynamoTRTLLMChatCompletionStreamResponse,
     DynamoTRTLLMCompletionResponseStreamChoice,
