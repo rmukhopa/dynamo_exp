@@ -181,7 +181,7 @@ to launch these components.
 
 ```bash
 cd /workspace/examples/tensorrt_llm
-dynamo serve graphs.agg:Frontend -f ./configs/disagg.yaml
+dynamo serve graphs.agg:Frontend -f ./configs/disagg.yaml &
 ```
 
 ##### Worker Node(s)
@@ -214,7 +214,7 @@ export SLURM_NODELIST=${HOSTNAME}
 Deploy a Prefill worker:
 ```
 cd /workspace/examples/tensorrt_llm
-dynamo serve components.prefill_worker:TensorRTLLMPrefillWorker -f ./configs/disagg.yaml
+dynamo serve components.prefill_worker:TensorRTLLMPrefillWorker -f ./configs/disagg.yaml &
 ```
 
 Now you have a 2-node deployment with 1 Decode worker on node1, and 1 Prefill worker on node2!
@@ -224,10 +224,10 @@ steps but replacing the config files involed, or write your own custom config fi
 ```bash
 # On head node - deploy decode worker, frontend, and processor
 cd /workspace/examples/tensorrt_llm
-dynamo serve graphs.agg:Frontend -f ./configs/deepseek_r1_4xB200_disagg.yaml
+dynamo serve graphs.agg:Frontend -f ./configs/deepseek_r1_4xB200_disagg.yaml &
 
 # On worker node - deploy prefill worker only
-dynamo serve components.prefill_worker:TensorRTLLMPrefillWorker -f ./configs/deepseek_r1_4xB200_disagg.yaml
+dynamo serve components.prefill_worker:TensorRTLLMPrefillWorker -f ./configs/deepseek_r1_4xB200_disagg.yaml &
 ```
 
 ##### Client
