@@ -18,8 +18,10 @@
 # and will be overwritten by the disaggregated config file
 
 # NOTE: FP4 can fit on GB200 (4xB200 GPUs)
-# For other precisions like FP8 or FP16, you'll need to adjust
-# the number of GPUs/parallelism according to your hardware.
+# 1. For precisions other than FP4, like FP8 or FP16, you'll need to adjust
+#    the number of GPUs/parallelism according to your hardware.
+# 2. If you already have a pre-downloaded checkpoint, you can set model_name
+#    to the directory /path/to/deepseek/weights/ instead.
 model_name: "deepseek-ai/DeepSeek-R1-FP4"
 tensor_parallel_size: 4
 moe_expert_parallel_size: 4
