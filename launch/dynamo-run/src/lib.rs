@@ -432,7 +432,6 @@ pub async fn run(
             EngineConfig::StaticFull {
                 service_name: model_name,
                 engine: engine,
-
             }
         }
         #[cfg(feature = "python")]
