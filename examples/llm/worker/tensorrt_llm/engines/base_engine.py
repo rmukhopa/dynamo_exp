@@ -297,6 +297,7 @@ class BaseTensorrtLLMEngine:
         events = self._llm_engine.get_kv_cache_events_async(timeout=5)
         async for event_list in events:
             for event in event_list:
+                logger.info(f"Event ===> {event}")
                 data = event["data"]
                 if data["type"] == "stored":
                     parent_hash = data["parent_hash"]

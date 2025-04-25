@@ -17,7 +17,7 @@ import argparse
 import logging
 import random
 import traceback
-from abc import ABC
+from abc import ABC, abstractmethod
 from argparse import Namespace
 from typing import AsyncIterator
 
@@ -25,7 +25,7 @@ from common.logging import check_required_workers
 from common.protocol import Tokens
 
 from dynamo.llm import AggregatedMetrics, KvIndexer, KvMetricsAggregator, OverlapScores
-from dynamo.sdk import async_on_start, dynamo_context, dynamo_endpoint
+from dynamo.sdk import dynamo_context, dynamo_endpoint
 from dynamo.sdk.lib.config import ServiceConfig
 
 logger = logging.getLogger(__name__)
@@ -84,8 +84,11 @@ class BaseRouter(ABC):
         args = parser.parse_args(config_args)
         return args
 
-    @async_on_start
+    @abstractmethod
     async def async_init(self):
+        """Initialize the router components."""
+    
+    async def kv_router_init(self, poll_interval: float=0.5):
         """Initialize the router components."""
         self.runtime = dynamo_context["runtime"]
         self.workers_client = (
@@ -95,7 +98,7 @@ class BaseRouter(ABC):
             .client()
         )
 
-        await check_required_workers(self.workers_client, self.args.min_workers)
+        await check_required_workers(self.workers_client, self.args.min_workers, poll_interval=poll_interval)
 
         kv_listener = self.runtime.namespace("dynamo").component(self.worker_name)
         await kv_listener.create_service()

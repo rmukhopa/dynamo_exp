@@ -20,6 +20,7 @@ from router.base_router import BaseRouter
 from worker.vllm import VllmWorker
 
 from dynamo.sdk import depends, service
+from dynamo.sdk import async_on_start
 
 WorkerId = str
 
@@ -42,3 +43,7 @@ class Router(BaseRouter):
     def __init__(self):
         super().__init__()
         self.worker_name = "VllmWorker"
+    
+    @async_on_start
+    async def async_init(self):
+        await super().kv_router_init()

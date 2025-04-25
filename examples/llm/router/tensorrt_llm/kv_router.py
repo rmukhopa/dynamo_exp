@@ -19,6 +19,7 @@ from argparse import Namespace
 
 from router.base_router import BaseRouter
 from worker.tensorrt_llm import TensorRTLLMWorker
+from dynamo.sdk import async_on_start
 
 from dynamo.sdk import depends, service
 from dynamo.sdk.lib.config import ServiceConfig
@@ -75,3 +76,8 @@ class Router(BaseRouter):
     def __init__(self):
         super().__init__()
         self.worker_name = "TensorRTLLMWorker"
+
+    @async_on_start
+    async def async_init(self):
+        await super().kv_router_init(poll_interval=30)
+        
