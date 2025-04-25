@@ -93,6 +93,7 @@ pub async fn run(
             service_name,
             engine,
         } => {
+            tracing::info!("StaticFull engine config: {:?}", service_name);
             let engine = Arc::new(StreamingEngineAdapter::new(engine));
             let manager = http_service.model_manager();
             manager.add_completions_model(&service_name, engine.clone())?;
