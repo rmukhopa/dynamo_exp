@@ -97,7 +97,7 @@ ENV VIRTUAL_ENV=/opt/dynamo/venv
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 
 # Install NIXL Python module
-# TODO: Can NIXL build select gds_path based on arch instead of us?
+# TODO: Move gds_path selection based on arch into NIXL build
 RUN if [ "$ARCH" = "arm64" ]; then \
     cd /opt/nixl && uv pip install . --config-settings=setup-args="-Dgds_path=/usr/local/cuda/targets/sbsa-linux/"; \
     else \
@@ -111,7 +111,7 @@ ARG VLLM_PATCH="vllm_v${VLLM_REF}-dynamo-kv-disagg-patch.patch"
 ARG VLLM_PATCHED_PACKAGE_NAME="ai_dynamo_vllm"
 ARG VLLM_PATCHED_PACKAGE_VERSION="0.8.4"
 RUN --mount=type=bind,source=./container/deps/,target=/tmp/deps \
-    mkdir -p /tmp/vllm && \
+    mkdir /tmp/vllm && \
     uv pip install pip wheel && \
     # TODO: Handle arm64: Build wheel from source
     if [ "$ARCH" = "arm64" ]; then \
