@@ -101,7 +101,7 @@ ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
 RUN if [ "$ARCH" = "arm64" ]; then \
     cd /opt/nixl && uv pip install . --config-settings=setup-args="-Dgds_path=/usr/local/cuda/targets/sbsa-linux/"; \
     else \
-    cd /opt/nixl && uv pip install .; \
+    cd /opt/nixl && uv pip install . ; \
     fi
 
 # Install patched vllm - keep this early in Dockerfile to avoid
@@ -120,13 +120,13 @@ RUN --mount=type=bind,source=./container/deps/,target=/tmp/deps \
     cd /tmp/vllm/vllm-${VLLM_REF}/ && \
     python use_existing_torch.py && \
     uv pip install -r requirements-build.txt && \
-    uv pip install -e . --no-build-isolation \
+    uv pip install -e . --no-build-isolation ; \
     # Handle x86_64: Download wheel, unpack, setup for later steps
     else \
     mkdir /tmp/vllm && \
     python -m pip download --only-binary=:all: --no-deps --dest /tmp/vllm vllm==v${VLLM_REF} && \
     cd /tmp/vllm && \
-    wheel unpack *.whl \
+    wheel unpack *.whl ;\
     fi && \
     # Common steps: Navigate, patch, manipulate metadata, pack, install
     cd /tmp/vllm/vllm-${VLLM_REF}/ && \
