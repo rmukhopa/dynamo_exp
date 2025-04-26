@@ -37,7 +37,7 @@ use tokio::sync::oneshot::Sender;
 use tokio_stream::{wrappers::ReceiverStream, StreamExt};
 
 use dynamo_llm::backend::ExecutionContext;
-use dynamo_llm::engines::{StreamingEngine, EngineDispatcher};
+use dynamo_llm::engines::{EngineDispatcher, StreamingEngine};
 
 /// Python snippet to import a file as a module
 const PY_IMPORT: &CStr = cr#"

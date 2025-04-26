@@ -18,9 +18,8 @@ use std::{future::Future, pin::Pin};
 use std::{io::Read, sync::Arc};
 
 use dynamo_llm::{
-    backend::ExecutionContext, kv_router::publisher::KvMetricsPublisher,
+    backend::ExecutionContext, engines::StreamingEngine, kv_router::publisher::KvMetricsPublisher,
     model_card::model::ModelDeploymentCard,
-    engines::StreamingEngine,
 };
 use dynamo_runtime::{protocols::Endpoint, DistributedRuntime};
 

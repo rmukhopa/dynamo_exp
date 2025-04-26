@@ -35,15 +35,11 @@ use dynamo_runtime::pipeline::{Error, ManyOut, SingleIn};
 use dynamo_runtime::protocols::annotated::Annotated;
 
 use dynamo_llm::protocols::openai::{
-    chat_completions::{
-        NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse,
-    },
-    completions::{
-        CompletionRequest, CompletionResponse, prompt_to_string,
-    },
+    chat_completions::{NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse},
+    completions::{prompt_to_string, CompletionRequest, CompletionResponse},
 };
 
-use dynamo_llm::engines::{StreamingEngine, EngineDispatcher};
+use dynamo_llm::engines::{EngineDispatcher, StreamingEngine};
 
 /// How many requests mistral will run at once in the paged attention scheduler.
 /// It actually runs 1 fewer than this.
@@ -55,9 +51,7 @@ const PAGED_ATTENTION_MAX_NUM_SEQS: usize = 10;
 /// finish_reason=stop and no tokens for one of the requests.
 const EXP_ENABLE_PAGED_ATTENTION: bool = false;
 
-pub async fn make_engine(
-    gguf_path: &Path,
-) -> pipeline_error::Result<Arc<dyn StreamingEngine>> {
+pub async fn make_engine(gguf_path: &Path) -> pipeline_error::Result<Arc<dyn StreamingEngine>> {
     let engine = MistralRsEngine::new(gguf_path).await?;
     let engine: Arc<dyn StreamingEngine> = Arc::new(EngineDispatcher::new(engine));
     Ok(engine)
@@ -414,12 +408,8 @@ fn to_logit_bias(lb: HashMap<String, serde_json::Value>) -> HashMap<u32, f32> {
 }
 
 #[async_trait]
-impl
-    AsyncEngine<
-        SingleIn<CompletionRequest>,
-        ManyOut<Annotated<CompletionResponse>>,
-        Error,
-    > for MistralRsEngine
+impl AsyncEngine<SingleIn<CompletionRequest>, ManyOut<Annotated<CompletionResponse>>, Error>
+    for MistralRsEngine
 {
     async fn generate(
         &self,
@@ -452,7 +442,12 @@ impl
                 .unwrap_or(det.top_n_logprobs),
             frequency_penalty: request.inner.frequency_penalty.or(det.frequency_penalty),
             presence_penalty: request.inner.presence_penalty.or(det.presence_penalty),
-            stop_toks: request.inner.stop.clone().map(to_stop_tokens).or(det.stop_toks),
+            stop_toks: request
+                .inner
+                .stop
+                .clone()
+                .map(to_stop_tokens)
+                .or(det.stop_toks),
             max_len: request
                 .inner
                 .max_tokens
@@ -461,7 +456,8 @@ impl
                 .or(det.max_len),
             logits_bias: request
                 .inner
-                .logit_bias.clone()
+                .logit_bias
+                .clone()
                 .map(to_logit_bias)
                 .or(det.logits_bias),
             // These are not in async-openai yet

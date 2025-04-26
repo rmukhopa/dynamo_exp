@@ -17,11 +17,12 @@ use std::pin::Pin;
 
 use crate::{flags::RouterMode, EngineConfig, Flags};
 use dynamo_llm::{
-    backend::ExecutionContext,
-    model_card::model::ModelDeploymentCard,
     backend::Backend,
-    preprocessor::OpenAIPreprocessor,
+    backend::ExecutionContext,
     engines::StreamingEngineAdapter,
+    model_card::model::ModelDeploymentCard,
+    preprocessor::OpenAIPreprocessor,
+    protocols::common::llm_backend::{BackendInput, BackendOutput},
     types::{
         openai::chat_completions::{
             NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse,
@@ -29,11 +30,10 @@ use dynamo_llm::{
         },
         Annotated,
     },
-    protocols::common::llm_backend::{BackendInput, BackendOutput},
 };
 use dynamo_runtime::{
-    pipeline::{ManyOut, Operator, ServiceBackend, ServiceFrontend, SingleIn, Source, Context,},
-    engine::{Data, AsyncEngineStream},
+    engine::{AsyncEngineStream, Data},
+    pipeline::{Context, ManyOut, Operator, ServiceBackend, ServiceFrontend, SingleIn, Source},
     DistributedRuntime, Runtime,
 };
 use std::sync::Arc;
@@ -84,8 +84,11 @@ pub async fn prepare_engine(
             engine: inner_engine,
             card,
         } => {
-
-            let pipeline = build_pipeline::<NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse>(&card, inner_engine).await?;
+            let pipeline = build_pipeline::<
+                NvCreateChatCompletionRequest,
+                NvCreateChatCompletionStreamResponse,
+            >(&card, inner_engine)
+            .await?;
 
             tracing::debug!("Model: {service_name} with pre-processing");
             Ok((service_name, pipeline, true))
@@ -105,11 +108,13 @@ where
         Context<Req>,
         Pin<Box<dyn AsyncEngineStream<Annotated<Resp>>>>,
         Context<BackendInput>,
-        Pin<Box<dyn AsyncEngineStream<Annotated<BackendOutput>>>>
+        Pin<Box<dyn AsyncEngineStream<Annotated<BackendOutput>>>>,
     >,
 {
     let frontend = ServiceFrontend::<SingleIn<Req>, ManyOut<Annotated<Resp>>>::new();
-    let preprocessor = OpenAIPreprocessor::new((*card).clone()).await?.into_operator();
+    let preprocessor = OpenAIPreprocessor::new((*card).clone())
+        .await?
+        .into_operator();
     let backend = Backend::from_mdc((*card).clone()).await?.into_operator();
     let engine = ServiceBackend::from_engine(engine);
 
@@ -125,11 +130,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dynamo_llm::{
-        types::openai::{
-            chat_completions::{NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse},
-            completions::{CompletionRequest, CompletionResponse},
-        },
+    use dynamo_llm::types::openai::{
+        chat_completions::{NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse},
+        completions::{CompletionRequest, CompletionResponse},
     };
 
     const HF_PATH: &str = concat!(
@@ -146,8 +149,9 @@ mod tests {
         // Build pipeline for chat completions
         let pipeline = build_pipeline::<
             NvCreateChatCompletionRequest,
-            NvCreateChatCompletionStreamResponse
-        >(&card, engine).await?;
+            NvCreateChatCompletionStreamResponse,
+        >(&card, engine)
+        .await?;
 
         // Verify pipeline was created
         assert!(Arc::strong_count(&pipeline) >= 1);
@@ -162,10 +166,8 @@ mod tests {
         let engine = dynamo_llm::engines::make_engine_core();
 
         // Build pipeline for completions
-        let pipeline = build_pipeline::<
-            CompletionRequest,
-            CompletionResponse
-        >(&card, engine).await?;
+        let pipeline =
+            build_pipeline::<CompletionRequest, CompletionResponse>(&card, engine).await?;
 
         // Verify pipeline was created
         assert!(Arc::strong_count(&pipeline) >= 1);

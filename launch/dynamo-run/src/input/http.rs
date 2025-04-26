@@ -15,7 +15,10 @@
 
 use std::sync::Arc;
 
+use crate::input::common;
+use crate::{EngineConfig, Flags};
 use dynamo_llm::{
+    engines::StreamingEngineAdapter,
     http::service::{discovery, service_v2},
     model_type::ModelType,
     types::{
@@ -24,13 +27,8 @@ use dynamo_llm::{
         },
         openai::completions::{CompletionRequest, CompletionResponse},
     },
-    engines::StreamingEngineAdapter,
 };
-use dynamo_runtime::{
-    DistributedRuntime, Runtime,
-};
-use crate::input::common;
-use crate::{EngineConfig, Flags};
+use dynamo_runtime::{DistributedRuntime, Runtime};
 
 /// Build and run an HTTP service
 pub async fn run(
@@ -92,14 +90,16 @@ pub async fn run(
 
             let chat_pipeline = common::build_pipeline::<
                 NvCreateChatCompletionRequest,
-                NvCreateChatCompletionStreamResponse
-            >(&card, inner_engine.clone()).await?;
+                NvCreateChatCompletionStreamResponse,
+            >(&card, inner_engine.clone())
+            .await?;
             manager.add_chat_completions_model(&service_name, chat_pipeline)?;
 
-            let cmpl_pipeline = common::build_pipeline::<
-                CompletionRequest,
-                CompletionResponse
-            >(&card, inner_engine).await?;
+            let cmpl_pipeline = common::build_pipeline::<CompletionRequest, CompletionResponse>(
+                &card,
+                inner_engine,
+            )
+            .await?;
             manager.add_completions_model(&service_name, cmpl_pipeline)?;
         }
         EngineConfig::None => unreachable!(),
