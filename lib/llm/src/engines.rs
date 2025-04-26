@@ -28,10 +28,10 @@ use dynamo_runtime::protocols::annotated::Annotated;
 use crate::backend::ExecutionContext;
 use crate::preprocessor::BackendInput;
 use crate::protocols::common::llm_backend::LLMEngineOutput;
-use crate::protocols::openai::chat_completions::{
-    NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse
+use crate::protocols::openai::{
+    chat_completions::{NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse},
+    completions::{CompletionRequest, CompletionResponse, prompt_to_string},
 };
-use crate::protocols::openai::completions::{CompletionRequest, CompletionResponse, prompt_to_string};
 
 //
 // The engines are each in their own crate under `lib/engines`
