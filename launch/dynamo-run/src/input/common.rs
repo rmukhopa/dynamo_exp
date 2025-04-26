@@ -21,6 +21,7 @@ use dynamo_llm::{
     model_card::model::ModelDeploymentCard,
     backend::Backend,
     preprocessor::OpenAIPreprocessor,
+    engines::StreamingEngineAdapter,
     types::{
         openai::chat_completions::{
             NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse,
@@ -75,9 +76,8 @@ pub async fn prepare_engine(
             card: _card,
         } => {
             tracing::debug!("Model: {service_name}");
-            //Ok((service_name, engine, false))
-
-            todo!()
+            let engine = Arc::new(StreamingEngineAdapter::new(engine));
+            Ok((service_name, engine, false))
         }
         EngineConfig::StaticCore {
             service_name,

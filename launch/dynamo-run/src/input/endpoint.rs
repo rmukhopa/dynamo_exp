@@ -57,7 +57,7 @@ pub async fn run(
             card,
         } => {
             let engine = Arc::new(StreamingEngineAdapter::new(engine));
-            (Ingress::for_engine(engine)?, service_name)
+            (Ingress::for_engine(engine)?, service_name, card)
         }
         EngineConfig::StaticCore {
             service_name,
