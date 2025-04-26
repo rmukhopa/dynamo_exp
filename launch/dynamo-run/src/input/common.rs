@@ -161,7 +161,7 @@ mod tests {
         let card = ModelDeploymentCard::from_local_path(HF_PATH, None).await?;
         let engine = dynamo_llm::engines::make_engine_core();
 
-        // Build pipeline for chat completions
+        // Build pipeline for completions
         let pipeline = build_pipeline::<
             CompletionRequest,
             CompletionResponse
