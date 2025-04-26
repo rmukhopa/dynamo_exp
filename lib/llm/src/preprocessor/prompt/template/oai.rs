@@ -66,7 +66,7 @@ impl OAIChatLikeRequest for CompletionRequest {
             },
         );
 
-        minijinja::value::Value::from_serialize(&vec![message])
+        minijinja::value::Value::from_serialize(vec![message])
     }
 
     fn should_add_generation_prompt(&self) -> bool {
