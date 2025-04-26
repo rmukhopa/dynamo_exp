@@ -73,6 +73,7 @@ pub async fn prepare_engine(
         EngineConfig::StaticFull {
             service_name,
             engine,
+            card: _card,
         } => {
             tracing::debug!("Model: {service_name}");
             let engine = Arc::new(StreamingEngineAdapter::new(engine));
