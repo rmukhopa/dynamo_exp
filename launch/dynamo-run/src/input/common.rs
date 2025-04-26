@@ -13,8 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::pin::Pin;
+
 use crate::{flags::RouterMode, EngineConfig, Flags};
 use dynamo_llm::{
+    backend::ExecutionContext,
+    model_card::model::ModelDeploymentCard,
     backend::Backend,
     preprocessor::OpenAIPreprocessor,
     types::{
@@ -24,9 +28,11 @@ use dynamo_llm::{
         },
         Annotated,
     },
+    protocols::common::llm_backend::{BackendInput, BackendOutput},
 };
 use dynamo_runtime::{
-    pipeline::{ManyOut, Operator, ServiceBackend, ServiceFrontend, SingleIn, Source},
+    pipeline::{ManyOut, Operator, ServiceBackend, ServiceFrontend, SingleIn, Source, Context,},
+    engine::{Data, AsyncEngineStream},
     DistributedRuntime, Runtime,
 };
 use std::sync::Arc;
@@ -78,29 +84,40 @@ pub async fn prepare_engine(
             engine: inner_engine,
             card,
         } => {
-            let frontend = ServiceFrontend::<
-                SingleIn<NvCreateChatCompletionRequest>,
-                ManyOut<Annotated<NvCreateChatCompletionStreamResponse>>,
-            >::new();
-            let preprocessor = OpenAIPreprocessor::new(*card.clone())
-                .await?
-                .into_operator();
-            let backend = Backend::from_tokenizer(card.tokenizer_hf()?)
-                .await?
-                .into_operator();
-            let engine = ServiceBackend::from_engine(inner_engine);
 
-            let pipeline = frontend
-                .link(preprocessor.forward_edge())?
-                .link(backend.forward_edge())?
-                .link(engine)?
-                .link(backend.backward_edge())?
-                .link(preprocessor.backward_edge())?
-                .link(frontend)?;
+            let pipeline = build_pipeline::<NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse>(&card, inner_engine).await?;
 
             tracing::debug!("Model: {service_name} with pre-processing");
             Ok((service_name, pipeline, true))
         }
         EngineConfig::None => unreachable!(),
     }
+}
+
+pub async fn build_pipeline<Req, Resp>(
+    card: &ModelDeploymentCard,
+    engine: ExecutionContext,
+) -> anyhow::Result<Arc<ServiceFrontend<SingleIn<Req>, ManyOut<Annotated<Resp>>>>>
+where
+    Req: Data,
+    Resp: Data,
+    OpenAIPreprocessor: Operator<
+        Context<Req>,
+        Pin<Box<dyn AsyncEngineStream<Annotated<Resp>>>>,
+        Context<BackendInput>,
+        Pin<Box<dyn AsyncEngineStream<Annotated<BackendOutput>>>>
+    >,
+{
+    let frontend = ServiceFrontend::<SingleIn<Req>, ManyOut<Annotated<Resp>>>::new();
+    let preprocessor = OpenAIPreprocessor::new((*card).clone()).await?.into_operator();
+    let backend = Backend::from_mdc((*card).clone()).await?.into_operator();
+    let engine = ServiceBackend::from_engine(engine);
+
+    Ok(frontend
+        .link(preprocessor.forward_edge())?
+        .link(backend.forward_edge())?
+        .link(engine)?
+        .link(backend.backward_edge())?
+        .link(preprocessor.backward_edge())?
+        .link(frontend)?)
 }
