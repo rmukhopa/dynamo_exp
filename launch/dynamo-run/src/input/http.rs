@@ -76,6 +76,7 @@ pub async fn run(
         EngineConfig::StaticFull {
             service_name,
             engine,
+            ..
         } => {
             let engine = Arc::new(StreamingEngineAdapter::new(engine));
             let manager = http_service.model_manager();
