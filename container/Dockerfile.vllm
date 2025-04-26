@@ -115,26 +115,26 @@ RUN --mount=type=bind,source=./container/deps/,target=/tmp/deps \
     uv pip install pip wheel && \
     # TODO: Handle arm64: Build wheel from source
     if [ "$ARCH" = "arm64" ]; then \
-    git clone --branch v${VLLM_REF} --depth 1 https://github.com/vllm-project/vllm.git /tmp/vllm/vllm-${VLLM_REF} && \
-    echo "WARNING: VLLM installation is not supported on arm64 yet, skipping it." ; \
+        git clone --branch v${VLLM_REF} --depth 1 https://github.com/vllm-project/vllm.git /tmp/vllm/vllm-${VLLM_REF} && \
+        echo "WARNING: VLLM installation is not supported on arm64 yet, skipping it." ; \
     # Handle x86_64: Download wheel, unpack, setup for later steps
     else \
-    python -m pip download --only-binary=:all: --no-deps --dest /tmp/vllm vllm==v${VLLM_REF} && \
-    cd /tmp/vllm && \
-    wheel unpack *.whl && \
-    cd vllm-${VLLM_REF}/ && \
-    patch -p1 < /tmp/deps/vllm/${VLLM_PATCH} && \
-    # Rename the package from vllm to ai_dynamo_vllm
-    mv vllm-${VLLM_REF}.dist-info ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info && \
-    sed -i "s/^Name: vllm/Name: ${VLLM_PATCHED_PACKAGE_NAME}/g" ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/METADATA && \
-    sed -i "s/^Version: ${VLLM_REF}/Version: ${VLLM_PATCHED_PACKAGE_VERSION}/g" ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/METADATA && \
-    # Update wheel tag from linux_x86_64 to manylinux1_x86_64 in WHEEL file
-    sed -i 's/Tag: cp38-abi3-linux_x86_64/Tag: cp38-abi3-manylinux1_x86_64/g' ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/WHEEL && \
-    # Also update the tag in RECORD file to match
-    sed -i "s/-cp38-abi3-linux_x86_64.whl/-cp38-abi3-manylinux1_x86_64.whl/g" ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/RECORD && \
-    mkdir -p /workspace/dist && \
-    wheel pack . --dest-dir /workspace/dist && \
-    uv pip install /workspace/dist/${VLLM_PATCHED_PACKAGE_NAME}-*.whl ; \
+        python -m pip download --only-binary=:all: --no-deps --dest /tmp/vllm vllm==v${VLLM_REF} && \
+        cd /tmp/vllm && \
+        wheel unpack *.whl && \
+        cd vllm-${VLLM_REF}/ && \
+        patch -p1 < /tmp/deps/vllm/${VLLM_PATCH} && \
+        # Rename the package from vllm to ai_dynamo_vllm
+        mv vllm-${VLLM_REF}.dist-info ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info && \
+        sed -i "s/^Name: vllm/Name: ${VLLM_PATCHED_PACKAGE_NAME}/g" ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/METADATA && \
+        sed -i "s/^Version: ${VLLM_REF}/Version: ${VLLM_PATCHED_PACKAGE_VERSION}/g" ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/METADATA && \
+        # Update wheel tag from linux_x86_64 to manylinux1_x86_64 in WHEEL file
+        sed -i 's/Tag: cp38-abi3-linux_x86_64/Tag: cp38-abi3-manylinux1_x86_64/g' ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/WHEEL && \
+        # Also update the tag in RECORD file to match
+        sed -i "s/-cp38-abi3-linux_x86_64.whl/-cp38-abi3-manylinux1_x86_64.whl/g" ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/RECORD && \
+        mkdir -p /workspace/dist && \
+        wheel pack . --dest-dir /workspace/dist && \
+        uv pip install /workspace/dist/${VLLM_PATCHED_PACKAGE_NAME}-*.whl ; \
     fi
 
 # Common dependencies
@@ -297,8 +297,8 @@ RUN uv build --wheel --out-dir /workspace/dist && \
     cd /workspace/lib/bindings/python && \
     uv build --wheel --out-dir /workspace/dist --python 3.12 && \
     if [ "$RELEASE_BUILD" = "true" ]; then \
-    uv build --wheel --out-dir /workspace/dist --python 3.11 && \
-    uv build --wheel --out-dir /workspace/dist --python 3.10; \
+        uv build --wheel --out-dir /workspace/dist --python 3.11 && \
+        uv build --wheel --out-dir /workspace/dist --python 3.10; \
     fi
 
 #######################################
@@ -399,14 +399,6 @@ WORKDIR /workspace
 ENV DYNAMO_HOME=/workspace
 ENV VIRTUAL_ENV=/opt/dynamo/venv
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
-<<<<<<< HEAD
-=======
-
-# Copy NIXL
-COPY --from=base /usr/local/nixl /usr/local/nixl
-ENV LD_LIBRARY_PATH=/usr/local/nixl/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
-ENV PYTHONPATH=/usr/local/nixl/lib/python3/dist-packages/:/opt/nixl/test/python/:$PYTHONPATH
->>>>>>> 94702c7930cbc7874f4a211c1198cd611ed02c0f
 
 # Setup the python environment
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
