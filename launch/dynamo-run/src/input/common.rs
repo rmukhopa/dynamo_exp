@@ -121,3 +121,55 @@ where
         .link(preprocessor.backward_edge())?
         .link(frontend)?)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use dynamo_llm::{
+        types::openai::{
+            chat_completions::{NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse},
+            completions::{CompletionRequest, CompletionResponse},
+        },
+    };
+
+    const HF_PATH: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../lib/llm/tests/data/sample-models/mock-llama-3.1-8b-instruct"
+    );
+
+    #[tokio::test]
+    async fn test_build_chat_completions_pipeline_core_engine_succeeds() -> anyhow::Result<()> {
+        // Create test model card
+        let card = ModelDeploymentCard::from_local_path(HF_PATH, None).await?;
+        let engine = dynamo_llm::engines::make_engine_core();
+
+        // Build pipeline for chat completions
+        let pipeline = build_pipeline::<
+            NvCreateChatCompletionRequest,
+            NvCreateChatCompletionStreamResponse
+        >(&card, engine).await?;
+
+        // Verify pipeline was created
+        assert!(Arc::strong_count(&pipeline) >= 1);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_build_completions_pipeline_core_engine_succeeds() -> anyhow::Result<()> {
+        // Create test model card
+        let card = ModelDeploymentCard::from_local_path(HF_PATH, None).await?;
+        let engine = dynamo_llm::engines::make_engine_core();
+
+        // Build pipeline for chat completions
+        let pipeline = build_pipeline::<
+            CompletionRequest,
+            CompletionResponse
+        >(&card, engine).await?;
+
+        // Verify pipeline was created
+        assert!(Arc::strong_count(&pipeline) >= 1);
+
+        Ok(())
+    }
+}
