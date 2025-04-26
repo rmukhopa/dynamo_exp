@@ -14,37 +14,22 @@
 // limitations under the License.
 
 use std::sync::Arc;
-use std::pin::Pin;
 
 use dynamo_llm::{
-    backend::ExecutionContext, model_card::model::ModelDeploymentCard,
-    backend::Backend,
     http::service::{discovery, service_v2},
     model_type::ModelType,
-    preprocessor::OpenAIPreprocessor,
     types::{
         openai::chat_completions::{
             NvCreateChatCompletionRequest, NvCreateChatCompletionStreamResponse,
         },
         openai::completions::{CompletionRequest, CompletionResponse},
-        Annotated,
     },
-    protocols::common::llm_backend::{BackendInput, BackendOutput},
     engines::StreamingEngineAdapter,
 };
 use dynamo_runtime::{
-    pipeline::{
-        ManyOut,
-        Operator,
-        ServiceBackend,
-        ServiceFrontend,
-        SingleIn,
-        Source,
-        Context,
-    },
-    engine::{Data, AsyncEngineStream},
     DistributedRuntime, Runtime,
 };
+use crate::input::common;
 use crate::{EngineConfig, Flags};
 
 /// Build and run an HTTP service
@@ -104,13 +89,13 @@ pub async fn run(
         } => {
             let manager = http_service.model_manager();
 
-            let chat_pipeline = build_pipeline::<
+            let chat_pipeline = common::build_pipeline::<
                 NvCreateChatCompletionRequest,
                 NvCreateChatCompletionStreamResponse
             >(&card, inner_engine.clone()).await?;
             manager.add_chat_completions_model(&service_name, chat_pipeline)?;
 
-            let cmpl_pipeline = build_pipeline::<
+            let cmpl_pipeline = common::build_pipeline::<
                 CompletionRequest,
                 CompletionResponse
             >(&card, inner_engine).await?;
@@ -119,32 +104,4 @@ pub async fn run(
         EngineConfig::None => unreachable!(),
     }
     http_service.run(runtime.primary_token()).await
-}
-
-async fn build_pipeline<Req, Resp>(
-    card: &ModelDeploymentCard,
-    engine: ExecutionContext,
-) -> anyhow::Result<Arc<ServiceFrontend<SingleIn<Req>, ManyOut<Annotated<Resp>>>>>
-where
-    Req: Data,
-    Resp: Data,
-    OpenAIPreprocessor: Operator<
-        Context<Req>,
-        Pin<Box<dyn AsyncEngineStream<Annotated<Resp>>>>,
-        Context<BackendInput>,
-        Pin<Box<dyn AsyncEngineStream<Annotated<BackendOutput>>>>
-    >,
-{
-    let frontend = ServiceFrontend::<SingleIn<Req>, ManyOut<Annotated<Resp>>>::new();
-    let preprocessor = OpenAIPreprocessor::new((*card).clone()).await?.into_operator();
-    let backend = Backend::from_mdc((*card).clone()).await?.into_operator();
-    let engine = ServiceBackend::from_engine(engine);
-
-    Ok(frontend
-        .link(preprocessor.forward_edge())?
-        .link(backend.forward_edge())?
-        .link(engine)?
-        .link(backend.backward_edge())?
-        .link(preprocessor.backward_edge())?
-        .link(frontend)?)
 }
