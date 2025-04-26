@@ -111,42 +111,31 @@ ARG VLLM_PATCH="vllm_v${VLLM_REF}-dynamo-kv-disagg-patch.patch"
 ARG VLLM_PATCHED_PACKAGE_NAME="ai_dynamo_vllm"
 ARG VLLM_PATCHED_PACKAGE_VERSION="0.8.4"
 RUN --mount=type=bind,source=./container/deps/,target=/tmp/deps \
-    # Ensure wheel is installed for unpacking/packing
+    mkdir -p /tmp/vllm && \
     uv pip install pip wheel && \
-    # Handle arm64: Clone source, patch, install build deps, setup for later steps
+    # TODO: Handle arm64: Build wheel from source
     if [ "$ARCH" = "arm64" ]; then \
-    uv pip install torch==2.7.0 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 && \
     git clone --branch v${VLLM_REF} --depth 1 https://github.com/vllm-project/vllm.git /tmp/vllm/vllm-${VLLM_REF} && \
-    cd /tmp/vllm/vllm-${VLLM_REF}/ && \
-    python use_existing_torch.py && \
-    uv pip install -r requirements-build.txt && \
-    uv pip install -e . --no-build-isolation ; \
+    echo "WARNING: VLLM installation is not supported on arm64 yet, skipping it." ; \
     # Handle x86_64: Download wheel, unpack, setup for later steps
     else \
-    mkdir /tmp/vllm && \
     python -m pip download --only-binary=:all: --no-deps --dest /tmp/vllm vllm==v${VLLM_REF} && \
     cd /tmp/vllm && \
-    wheel unpack *.whl ;\
-    fi && \
-    # Common steps: Navigate, patch, manipulate metadata, pack, install
-    cd /tmp/vllm/vllm-${VLLM_REF}/ && \
+    wheel unpack *.whl && \
+    cd vllm-${VLLM_REF}/ && \
     patch -p1 < /tmp/deps/vllm/${VLLM_PATCH} && \
-    # Rename the package from vllm to ai_dynamo_vllm by manipulating .dist-info
+    # Rename the package from vllm to ai_dynamo_vllm
     mv vllm-${VLLM_REF}.dist-info ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info && \
     sed -i "s/^Name: vllm/Name: ${VLLM_PATCHED_PACKAGE_NAME}/g" ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/METADATA && \
     sed -i "s/^Version: ${VLLM_REF}/Version: ${VLLM_PATCHED_PACKAGE_VERSION}/g" ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/METADATA && \
-    # Update wheel tag from linux_${ARCH_ALT} to manylinux1_${ARCH_ALT} in WHEEL file
-    # Note: This assumes cp38 - adjust if target Python version changes significantly
-    sed -i "s/Tag: cp38-abi3-linux_${ARCH_ALT}/Tag: cp38-abi3-manylinux1_${ARCH_ALT}/g" ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/WHEEL && \
+    # Update wheel tag from linux_x86_64 to manylinux1_x86_64 in WHEEL file
+    sed -i 's/Tag: cp38-abi3-linux_x86_64/Tag: cp38-abi3-manylinux1_x86_64/g' ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/WHEEL && \
     # Also update the tag in RECORD file to match
-    sed -i "s/-cp38-abi3-linux_${ARCH_ALT}.whl/-cp38-abi3-manylinux1_${ARCH_ALT}.whl/g" ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/RECORD && \
-    # Pack the modified source into a new wheel
+    sed -i "s/-cp38-abi3-linux_x86_64.whl/-cp38-abi3-manylinux1_x86_64.whl/g" ${VLLM_PATCHED_PACKAGE_NAME}-${VLLM_PATCHED_PACKAGE_VERSION}.dist-info/RECORD && \
     mkdir -p /workspace/dist && \
     wheel pack . --dest-dir /workspace/dist && \
-    # Install the newly built wheel
-    uv pip install /workspace/dist/${VLLM_PATCHED_PACKAGE_NAME}-*.whl && \
-    # Cleanup
-    rm -rf /tmp/vllm
+    uv pip install /workspace/dist/${VLLM_PATCHED_PACKAGE_NAME}-*.whl ; \
+    fi
 
 # Common dependencies
 RUN --mount=type=bind,source=./container/deps/requirements.txt,target=/tmp/requirements.txt \
